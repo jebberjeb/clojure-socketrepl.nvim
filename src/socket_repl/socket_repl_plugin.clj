@@ -131,9 +131,10 @@
            (nvim/get-current-buffer-text-async
              (fn [x]
                (try
-                 (let [form (get-form-at x coords)]
-                   (write-output! (str form "\n"))
-                   (write-code! form))
+                 (let [form (get-form-at x coords)
+                       code (format "(eval %s)" form)]
+                   (write-output! (str code "\n"))
+                   (write-code! code ))
                  (catch Throwable t
                    ;; TODO: Use more general plugin-level ereror handling
                    (write-output!
@@ -148,8 +149,9 @@
        (update-last!)
        (nvim/get-current-buffer-text-async
          (fn [x]
-           (write-output! (str x "\n"))
-           (write-code! x)))))
+           (let [code (format "(eval %s)" x)]
+             (write-output! (str code "\n"))
+             (write-code! code))))))
 
    (nvim/register-method!
      "doc"
