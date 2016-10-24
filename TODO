@@ -12,9 +12,19 @@ TODO alpha
 	[X] Name vim functions correctly
 	[X] create prod & debug plugin.vim
 	[X] add debug switch (var) to socket-repl-plugin.clj
-    [_] errors in the middle of a buffer
+    [X] errors in the middle of a buffer
     can be lost - wrap in eval?
 	[X] implement doc (word under cursor)
+	Results buffer
+		A single buffer, like NerdTree, but on far right
+			[X] How to make buffer always appear on the right, occupying the
+			: entire vertical? A: `:botright vnew`
+			[_] How to tag a buffer, reuse it for this purpose?
+				set buffer scope variable?
+				find buffer w/ that var, use it
+				otherwise, make new & set var
+		Pops up when you ,eb ,ef
+		Closes (hides) with q
 	[_] Pass host, port in connect
 	[_] Update README
 		[X] Move NVIM_LISTEN... stuff to a debug section
