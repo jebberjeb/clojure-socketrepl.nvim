@@ -76,6 +76,11 @@
   []
   (swap! current-connection assoc :last (System/currentTimeMillis)))
 
+(defn wrap-eval
+  "Wrap code in `eval`."
+  [code-str]
+  (format "(eval '(do %s))" code-str))
+
 (defn connect!
   "Connect to a socket repl. Adds the connection to the `current-connection`
   atom. Creates `go-loop`s to delegate input from the socket to `handler` one
@@ -132,7 +137,7 @@
              (fn [x]
                (try
                  (let [form (get-form-at x coords)
-                       code (format "(eval %s)" form)]
+                       code (wrap-eval form)]
                    (write-output! (str code "\n"))
                    (write-code! code ))
                  (catch Throwable t
@@ -149,7 +154,7 @@
        (update-last!)
        (nvim/get-current-buffer-text-async
          (fn [x]
-           (let [code (format "(eval %s)" x)]
+           (let [code (wrap-eval x)]
              (write-output! (str code "\n"))
              (write-code! code))))))
 
@@ -166,7 +171,7 @@
      "show-log"
      (fn [msg]
        (update-last!)
-       (nvim/run-command-async!
+       (nvim/vim-command-async
          (format ":call termopen('tail -f %s') | stopinsert | exe \"normal \\<C-w>\\<C-x>\""
                  (-> @current-connection
                      :file
@@ -183,8 +188,8 @@
           (recur))))
 
     ;; Let nvim know we're shutting down.
-    (nvim/run-command! ":let g:is_running=0")
-    (nvim/run-command! ":echo 'plugin stopping.'")))
+    (nvim/vim-command ":let g:is_running=0")
+    (nvim/vim-command ":echo 'plugin stopping.'")))
 
 (defn -main
   [& args]

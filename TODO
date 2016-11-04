@@ -20,10 +20,21 @@ TODO alpha
 			[X] How to make buffer always appear on the right, occupying the
 			: entire vertical? A: `:botright vnew`
 			[_] How to tag a buffer, reuse it for this purpose?
-				set buffer scope variable?
-				find buffer w/ that var, use it
-				otherwise, make new & set var
-		Pops up when you ,eb ,ef
+			: Prototype it in nvim @ repl first
+				[_] try and set, get, derive buffer name of the buf created by ,doc
+				Option 1
+					find buf w/ that name
+					close it
+					:botright vnew
+					open file again, or re-run command
+				Option 2 (better, leaves custom buffer in tact)
+					fine buf w/ that name
+					is it visible?
+						look through all windows
+						get buffer of each
+						if that list contains target buffer, then its visible
+					if not, :botright vnew
+					open file again, or re-run command
 		Closes (hides) with q
 	[_] Pass host, port in connect
 	[_] Update README
