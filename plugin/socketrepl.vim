@@ -13,12 +13,12 @@ function! StartIfNotRunning()
     endif
 endfunction
 
-function! Connect()
+function! Connect(host_colon_port)
     call StartIfNotRunning()
-    let res = rpcrequest(g:channel, 'connect', [])
+    let res = rpcrequest(g:channel, 'connect', a:host_colon_port)
     return res
 endfunction
-command! Connect call Connect()
+command! -nargs=? Connect call Connect(<args>)
 
 function! EvalBuffer()
     call StartIfNotRunning()

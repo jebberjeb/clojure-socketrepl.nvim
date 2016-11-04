@@ -31,6 +31,8 @@ TODO alpha
 		[X] Auto-show any time an eval, doc, happens
 		[_] Add docs for this & customization story
 	[_] Pass host, port in connect
+		[_] Make sure :Connect works with no args, or host:port arg
+		[_] Update debug vimscript
 	[_] Update README
 		[X] Move NVIM_LISTEN... stuff to a debug section
 		[_] demo video
