@@ -18,11 +18,17 @@ TODO alpha
 	Results buffer
 		A single buffer, like NerdTree, but on far right
 			`show-log`
-			[_] Only display if not already visible
+			[X] Only display if not already visible
 				use `buffer-visible?-async`
+				[X] not working, might need buffer property
+					buffer created by terminal has name we can't control
+					we could read it back in and store it
 				if not, :botright vnew, existing command
+		[_] After showing the log, return cursor to original buffer
+			Use it first, see if this feels right
 		[_] Closes (hides) with q? some other mapping?
-		[_] Auto-show any time an eval, doc, happens
+			Use it w/ q for now, see if something else better
+		[X] Auto-show any time an eval, doc, happens
 		[_] Add docs for this & customization story
 	[_] Pass host, port in connect
 	[_] Update README

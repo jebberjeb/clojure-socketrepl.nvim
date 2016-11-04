@@ -8,24 +8,27 @@ endfunction
 command! Connect call Connect()
 
 function! EvalBuffer()
+    ReplLog
     let res = rpcrequest(1, 'eval-buffer', [])
     return res
 endfunction
 command! EvalBuffer call EvalBuffer()
 
 function! EvalCode()
+    ReplLog
     let res = rpcrequest(1, 'eval-code', [])
     return res
 endfunction
 command! EvalCode call EvalCode()
 
-function! ReplLog()
-    let res = rpcrequest(1, 'show-log', [])
+function! ReplLog(buffer_cmd)
+    let res = rpcrequest(1, 'show-log', a:buffer_cmd)
     return res
 endfunction
 command! ReplLog call ReplLog()
 
 function! Doc()
+    ReplLog
     let res = rpcrequest(1, 'doc', [])
     return res
 endfunction
@@ -35,12 +38,7 @@ if !exists('g:disable_socket_repl_mappings')
     nnoremap <leader>eb :EvalBuffer<cr>
     nnoremap <leader>ef :EvalCode<cr>
     nnoremap <leader>doc :Doc<cr>
-
-    function! ShowLog()
-        vnew
-        call ReplLog()
-    endfunction
-    nnoremap <leader>rlog :call ShowLog()<cr>
+    nnoremap <leader>rlog :ReplLog<cr>
 endif
 
 echo 'debug socket repl plugin loaded!'
