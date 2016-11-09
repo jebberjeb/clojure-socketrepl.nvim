@@ -30,14 +30,23 @@ TODO alpha
 			Use it w/ q for now, see if something else better
 		[X] Auto-show any time an eval, doc, happens
 		[_] Add docs for this & customization story
-	[_] Pass host, port in connect
-		[_] Make sure :Connect works with no args, or host:port arg
-		[_] Update debug vimscript
+	[X] Pass host, port in connect
+		[X] Make sure :Connect works with no args, or host:port arg
+		[X] Update debug vimscript
 	[_] Update README
 		[X] Move NVIM_LISTEN... stuff to a debug section
 		[_] demo video
 		[_] architecture diagram
 			nvim<--msgpack/stdio-->plugin(jar)<--localhost:5555-->socketrepl
+	[_] Script debugging
+		open nvim w/ NVIM_LISTEN_ADDRESS
+			can we source debug vimscript from CLI?
+		start repl to clojure-socketrepl.nvim on 5555
+		load a ns which calls `user/go` to localhost 7777
+		How to reset state?
+			repl, rerun `connect!`, maybe just `go`
+			nvim channel 1 will be fubar, how to replace?
+				debug script when sourced increments channel
 
 TODO next
 	[_] Rather than explicit repl output logging, can we intercept

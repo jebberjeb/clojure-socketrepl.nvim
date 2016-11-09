@@ -1,35 +1,53 @@
+let s:p_dir = expand('<sfile>:p:h')
 let g:is_running = 0
 let g:channel = -1
 
-function! Connect()
-    let res = rpcrequest(1, 'connect', [])
+function! StartIfNotRunning()
+    if g:is_running == 0
+        let g:is_running = 1
+        let g:channel = 1
+    endif
+endfunction
+
+function! Connect(host_colon_port)
+    call StartIfNotRunning()
+    if a:host_colon_port == ""
+        let conn = "localhost:5555"
+    else
+        let conn = a:host_colon_port
+    endif
+    let res = rpcrequest(g:channel, 'connect', conn)
     return res
 endfunction
-command! Connect call Connect()
+command! -nargs=? Connect call Connect("<args>")
 
 function! EvalBuffer()
+    call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(1, 'eval-buffer', [])
+    let res = rpcrequest(g:channel, 'eval-buffer', [])
     return res
 endfunction
 command! EvalBuffer call EvalBuffer()
 
 function! EvalCode()
+    call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(1, 'eval-code', [])
+    let res = rpcrequest(g:channel, 'eval-code', [])
     return res
 endfunction
 command! EvalCode call EvalCode()
 
 function! ReplLog(buffer_cmd)
-    let res = rpcrequest(1, 'show-log', a:buffer_cmd)
+    call StartIfNotRunning()
+    let res = rpcrequest(g:channel, 'show-log', a:buffer_cmd)
     return res
 endfunction
-command! ReplLog call ReplLog()
+command! ReplLog call ReplLog(':botright new')
 
 function! Doc()
+    call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(1, 'doc', [])
+    let res = rpcrequest(g:channel, 'doc', [])
     return res
 endfunction
 command! Doc call Doc()

@@ -9,16 +9,20 @@ function! StartIfNotRunning()
         exec ':cd ..'
         let g:channel = rpcstart('java', ['-jar', 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'])
         let g:is_running = 1
-        call Connect()
     endif
 endfunction
 
 function! Connect(host_colon_port)
     call StartIfNotRunning()
-    let res = rpcrequest(g:channel, 'connect', a:host_colon_port)
+    if a:host_colon_port == ""
+        let conn = "localhost:5555"
+    else
+        let conn = a:host_colon_port
+    endif
+    let res = rpcrequest(g:channel, 'connect', conn)
     return res
 endfunction
-command! -nargs=? Connect call Connect(<args>)
+command! -nargs=? Connect call Connect("<args>")
 
 function! EvalBuffer()
     call StartIfNotRunning()

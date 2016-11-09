@@ -42,7 +42,7 @@
 (defn connection
   "Create a connection to a socket repl."
   [host port]
-  (let [socket (java.net.Socket. "localhost" 5555)]
+  (let [socket (java.net.Socket. host (Integer/parseInt port))]
     {:host host
      :port port
      :out (-> socket
@@ -132,11 +132,14 @@
   (nvim/register-method!
     "connect"
     (fn [msg]
-      (update-last!)
-      ;; TODO: Get host/port from message
-      (connect! "localhost" "5555"
-                (fn [x]
-                  (write-output! x)))))
+      (let [[host port] (-> msg
+                            message/params
+                            first
+                            (string/split #":"))]
+        (update-last!)
+        (connect! host port
+                  (fn [x]
+                    (write-output! x))))))
 
    (nvim/register-method!
      "eval-code"
