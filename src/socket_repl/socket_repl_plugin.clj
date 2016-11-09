@@ -150,8 +150,7 @@
            (nvim/get-current-buffer-text-async
              (fn [x]
                (try
-                 (let [form (get-form-at x coords)
-                       code (wrap-eval form)]
+                 (let [code (get-form-at x coords)]
                    (write-output! (str code "\n"))
                    (write-code! code ))
                  (catch Throwable t
