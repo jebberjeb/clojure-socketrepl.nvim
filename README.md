@@ -17,13 +17,14 @@ adding the following JVM options to any Clojure application.
 -Dclojure.server.repl="{:port 5555 :accept clojure.core.server/repl}"
 ```
 
-Create a buffer for displaying interaction with the repl.
+Connect to a socket repl. This connection is shared by all Neovim buffers.
+Optionally, provide a `host:port` argument. Default is `localhost:5555`.
 
 ```
-<leader>rlog
+:Connect
 ```
 
-From there, to eval any buffer or form under cursor use:
+Eval any buffer or form under cursor.
 
 ```
 <leader>eb
@@ -35,20 +36,32 @@ or
 <leader>ef
 ```
 
+The results of all repl activity are logged, and displayed in a buffer. To
+dismiss that log buffer, use `q` from within the log buffer.
+
+After dismissing the log, it may be resurrected.
+
+```
+<leader>rlog
+```
+
+Docs for the expression under the cursor are available.
+
+```
+<leader>doc
+```
+
 Note that the above leader-based mappings can be disabled by setting
 `g:disable_socket_repl_mappings` to `1` in your .vimrc. The following commands
 are available to create your own mappings:
 
 ```
+:Connect
 :EvalBuffer
 :EvalForm
+:Doc
 :ReplLog
 ```
-
-Unlike the `<leader>rlog` mapping, the `:ReplLog` command simply adds the repl
-log to the current pane.
-
-TODO: demo video
 
 ## Installation
 
@@ -56,7 +69,7 @@ Install however you normally do it. For example, using Vundle you'd add the
 following line to your `.vimrc`:
 
 ```
-Plugin 'jebberjeb/neovim-client', {'rtp': 'socket-repl-plugin/'}
+Plugin 'jebberjeb/clojure-socketrepl.nvim'
 ```
 
 Then (after sourcing `.vimrc`), from neovim:
