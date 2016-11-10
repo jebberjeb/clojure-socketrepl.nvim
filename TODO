@@ -26,7 +26,7 @@ TODO alpha
 				if not, :botright vnew, existing command
 		[_] After showing the log, return cursor to original buffer
 			Use it first, see if this feels right
-		[_] Closes (hides) with q? some other mapping?
+		[X] Closes (hides) with q? some other mapping?
 			Use it w/ q for now, see if something else better
 		[X] Auto-show any time an eval, doc, happens
 		[_] Add docs for this & customization story
@@ -38,6 +38,7 @@ TODO alpha
 		[_] demo video
 		[_] architecture diagram
 			nvim<--msgpack/stdio-->plugin(jar)<--localhost:5555-->socketrepl
+	[_] Error handle repl server not running
 	[_] Script debugging
 		open nvim w/ NVIM_LISTEN_ADDRESS
 			can we source debug vimscript from CLI?
