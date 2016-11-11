@@ -6,8 +6,6 @@ This plugin uses the [Neovim Clojure plugin host](https://github.com/jebberjeb/n
 
 Simply, this plugin uses a socket connection to send code to the repl. Nothing (very little) more. All (most) of the plugin code is written using Clojure. There's no (some) VimScript to sift through. This plugin is probably a bit too transparent. You see absolutely everything that's sent to the repl. If you eval an entire buffer...
 
-![Architecture](/doc/clojure-socketrepl-nvim.png)
-
 ## Usage
 
 Start a Clojure program with a socket repl server. This can be done by
@@ -81,6 +79,10 @@ Then (after sourcing `.vimrc`), from neovim:
 ## Dependencies
 
 This plugin requires a version of the Java version 1.6 or higher. You've probably already got this if you're using Clojure.
+
+## Plugin Architecture
+
+![Architecture](/doc/clojure-socketrepl-nvim.png)
 
 ## Developing
 
