@@ -2,9 +2,10 @@
   "A plugin which connects to a running socket repl and sends output back to
   Neovim."
   (:require
-    [clojure.java.io :as io]
     [clojure.core.async :as async :refer [go go-loop >! <!]]
+    [clojure.java.io :as io]
     [clojure.string :as string]
+    [clojure.tools.logging :as log]
     [neovim-client.message :as message]
     [neovim-client.nvim :as nvim])
   (:import
