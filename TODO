@@ -18,7 +18,7 @@ TODO alpha
 	Results buffer
 		A single buffer, like NerdTree, but on far right
 			`show-log`
-			[X] Only display if not already visible
+				[X] Only display if not already visible
 				use `buffer-visible?-async`
 				[X] not working, might need buffer property
 					buffer created by terminal has name we can't control
@@ -36,7 +36,7 @@ TODO alpha
 	[_] Update README
 		[X] Move NVIM_LISTEN... stuff to a debug section
 		[_] demo video
-		[_] architecture diagram
+		[X] architecture diagram
 			nvim<--msgpack/stdio-->plugin(jar)<--localhost:5555-->socketrepl
 	[_] Error handle repl server not running
 	[_] Script debugging

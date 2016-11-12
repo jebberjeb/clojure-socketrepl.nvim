@@ -50,17 +50,6 @@
               PrintStream.)
      :in (io/reader socket)}))
 
-(defn write-code
-  "Writes a string of code to the socket repl connection."
-  [{:keys [:out]} code-string]
-  (.println out code-string)
-  (.flush out))
-
-(defn write-code!
-  "Like `write-code`, but uses the current socket repl connection."
-  [code-string]
-  (write-code @current-connection code-string))
-
 (defn write-output
   "Write a string to the output file."
   [{:keys [:file-stream]} string]
@@ -71,6 +60,18 @@
   "Like `write-output`, but uses the current socket repl connection."
   [string]
   (write-output @current-connection string))
+
+(defn write-code
+  "Writes a string of code to the socket repl connection."
+  [{:keys [:out]} code-string]
+  (.println out code-string)
+  (.flush out))
+
+(defn write-code!
+  "Like `write-code`, but uses the current socket repl connection."
+  [code-string]
+  (write-output @current-connection (str code-string "\n"))
+  (write-code @current-connection code-string))
 
 (defn update-last!
   "Update the last accessed time."
@@ -91,11 +92,6 @@
   "Warn the user if not connected to a socket repl."
   [f]
   (warn-if-disconnect* current-connection f))
-
-(defn wrap-eval
-  "Wrap code in `eval`."
-  [code-str]
-  (format "(eval '(do %s))" code-str))
 
 (defn get-rlog-buffer-async
   "Returns a channel which contains the name of the buffer w/ b:rlog set, if
@@ -172,7 +168,6 @@
               (fn [x]
                 (try
                   (let [code (get-form-at x coords)]
-                    (write-output! (str code "\n"))
                     (write-code! code ))
                   (catch Throwable t
                     ;; TODO: Use more general plugin-level ereror handling
@@ -187,11 +182,18 @@
     (warn-if-disconnect
       (fn [msg]
         (update-last!)
-        (nvim/get-current-buffer-text-async
-          (fn [x]
-            (let [code (wrap-eval x)]
-              (write-output! (str code "\n"))
-              (write-code! code)))))))
+        (go
+          (let [buffer (nvim/vim-get-current-buffer)
+                filename (nvim/buffer-get-name buffer)]
+            (if (.exists (io/as-file filename))
+              (do
+                ;; Not sure if saving the file is really always what we want,
+                ;; but if we don't, stale data will be loaded.
+                (nvim/vim-command ":w")
+                (write-code! (format "(load-file \"%s\")" filename)))
+              (let [code (string/join "\n" (nvim/buffer-get-line-slice
+                                             buffer 0 -1))]
+                (write-code! (format "(eval '(do %s))" code)))))))))
 
   (nvim/register-method!
     "doc"
@@ -200,7 +202,6 @@
         (nvim/get-current-word-async
           (fn [word]
             (let [code (format "(clojure.repl/doc  %s)" word)]
-              (write-output! (str code "\n"))
               (write-code! code)))))))
 
   (nvim/register-method!
