@@ -61,6 +61,16 @@
   [string]
   (write-output @current-connection string))
 
+(defn write-error!
+  "Write a throwable's stack trace to the output file, using the current socket
+  repl connection."
+  [throwable]
+  (write-output!
+    (str "\n##### PLUGIN ERR #####\n"
+         (.getMessage throwable) "\n"
+         (string/join "\n" (map str (.getStackTrace throwable)))
+         \n"######################\n")))
+
 (defn write-code
   "Writes a string of code to the socket repl connection."
   [{:keys [:out]} code-string]
@@ -162,20 +172,12 @@
     (warn-if-disconnect
       (fn [msg]
         (update-last!)
-        (nvim/get-cursor-location-async
-          (fn [coords]
-            (nvim/get-current-buffer-text-async
-              (fn [x]
-                (try
-                  (let [code (get-form-at x coords)]
-                    (write-code! code ))
-                  (catch Throwable t
-                    ;; TODO: Use more general plugin-level ereror handling
-                    (write-output!
-                      (str "\n##### PLUGIN ERR #####\n"
-                           (.getMessage t) "\n"
-                           (string/join "\n" (map str (.getStackTrace t)))
-                           \n"######################\n")))))))))))
+        (go
+          (let [coords (nvim/get-cursor-location)
+                buffer-text (nvim/get-current-buffer-text)]
+            (try
+              (write-code! (get-form-at buffer-text coords))
+              (catch Throwable t (write-error! t))))))))
 
   (nvim/register-method!
     "eval-buffer"
