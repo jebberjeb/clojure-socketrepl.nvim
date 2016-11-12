@@ -152,9 +152,14 @@
                             first
                             (string/split #":"))]
         (update-last!)
-        (connect! host port
-                  (fn [x]
-                    (write-output! x))))))
+        (try
+          (connect! host port
+                    (fn [x]
+                      (write-output! x)))
+          (catch Throwable t
+            (nvim/vim-command-async
+              ":echo 'Unable to connect to socket repl.'"
+              (fn [_])))))))
 
   (nvim/register-method!
     "eval-code"
