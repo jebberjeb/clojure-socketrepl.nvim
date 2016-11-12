@@ -164,6 +164,7 @@
                     (fn [x]
                       (write-output! x)))
           (catch Throwable t
+            (log/error t "Error connecting to socket repl")
             (nvim/vim-command-async
               ":echo 'Unable to connect to socket repl.'"
               (fn [_])))))))
@@ -178,7 +179,9 @@
                 buffer-text (nvim/get-current-buffer-text)]
             (try
               (write-code! (get-form-at buffer-text coords))
-              (catch Throwable t (write-error! t))))))))
+              (catch Throwable t
+                (log/error t "Error evaluating a form")
+                (write-error! t))))))))
 
   (nvim/register-method!
     "eval-buffer"
