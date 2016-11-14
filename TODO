@@ -39,6 +39,10 @@ TODO alpha
 		[X] architecture diagram
 			nvim<--msgpack/stdio-->plugin(jar)<--localhost:5555-->socketrepl
 	[_] Error handle repl server not running
+		Connection localhost:3333
+		Then trying an ,eb doesn't fail gracefully
+		->Exception in logs, current-connection still nil?
+		Add logging
 	[_] Script debugging
 		open nvim w/ NVIM_LISTEN_ADDRESS
 			can we source debug vimscript from CLI?
