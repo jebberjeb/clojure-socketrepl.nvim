@@ -43,10 +43,13 @@ TODO alpha
 		Then trying an ,eb doesn't fail gracefully
 		->Exception in logs, current-connection still nil?
 	[_] Script debugging
-		open nvim w/ NVIM_LISTEN_ADDRESS
-			can we source debug vimscript from CLI?
-		start repl to clojure-socketrepl.nvim on 5555
-		load a ns which calls `user/go` to localhost 7777
+		[X] nvim listening to socket, sourced debug script
+		[X] plugin process running a repl
+			[X] automatically connect to nvim, with socketrepl main
+		[X] another clojure process w/ socket repl on 5555
+		[_] docs
+			You still have to :Connect from nvim
+	[_] Enhance debugging
 		How to reset state?
 			repl, rerun `connect!`, maybe just `go`
 			nvim channel 1 will be fubar, how to replace?

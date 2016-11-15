@@ -1,4 +1,3 @@
-let s:p_dir = expand('<sfile>:p:h')
 let g:is_running = 0
 let g:channel = -1
 
