@@ -89,10 +89,16 @@
   []
   (swap! current-connection assoc :last (System/currentTimeMillis)))
 
+(defn connected-to-socket-repl?
+  "Returns true if currently connected to a socket repl server."
+  [connection]
+  ;; Choose one of the properties set by establishing the connection.
+  (:host connection))
+
 (defn warn-if-disconnect*
-  [connection f]
+  [connection-atom f]
   (fn [msg]
-    (if-not @connection
+    (if-not (connected-to-socket-repl? @connection-atom)
       (nvim/vim-command-async
         ":echo 'Use :Connect host:port to connect to a socket repl'"
         (fn [_]))
@@ -122,7 +128,7 @@
   `handler` is a function which accepts one string argument."
   [host port handler]
   (let [conn (connection host port)
-        chan (async/chan 10)
+        chan (async/chan 1024)
         file (output-file)]
     (reset! current-connection
             (assoc conn
