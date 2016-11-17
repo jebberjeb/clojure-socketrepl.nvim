@@ -86,28 +86,23 @@ This plugin requires a version of the Java version 1.6 or higher. You've probabl
 
 ## Developing
 
-Start Neovim using, open the debug plugin script.
+### Tmux
+
+The `tmux-run-dev.sh` script launches Neovim, starts the plugin process and
+a repl, as well as a second Clojure process running a socket repl server. After
+using this script, simply run the `:Connect` command from Neovim to connect
+to the socket repl server.
+
+### Without Tmux
+
+Start Neovim sourcing the debug plugin script. Make it listen for plugin
+connections using a socket on port 7777.
 
 ```
-NVIM_LISTEN_ADDRESS=127.0.0.1:7777 nvim plugin/socketrepl.vim.debug
-```
-
-From within Neovim, source the debug plugin script. This causes it to use
-a socket connection, rather than stdio to communicate with the plugin.
-
-```
-:so %
+NVIM_LISTEN_ADDRESS=127.0.0.1:7777 nvim -S plugin/socketrepl.vim.debug
 ```
 
 Start the plugin. Then you'll need to connect to Neovim from the repl.
-
-```
-$> ./run-dev.sh
-$> nc localhost 5555
-user=> (go)
-```
-
-or, with Leiningen
 
 ```
 $> lein repl
