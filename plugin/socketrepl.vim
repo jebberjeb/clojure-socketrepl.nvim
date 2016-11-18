@@ -46,6 +46,13 @@ function! ReplLog(buffer_cmd)
 endfunction
 command! ReplLog call ReplLog(':botright new')
 
+function! DismissReplLog()
+    call StartIfNotRunning()
+    let res = rpcrequest(g:channel, 'dismiss-log', [])
+    return res
+endfunction
+command! DismissReplLog call DismissReplLog()
+
 function! Doc()
     call StartIfNotRunning()
     ReplLog
@@ -59,6 +66,7 @@ if !exists('g:disable_socket_repl_mappings')
     nnoremap <leader>ef :EvalCode<cr>
     nnoremap <leader>doc :Doc<cr>
     nnoremap <leader>rlog :ReplLog<cr>
+    nnoremap <leader>drlog :DismissReplLog<cr>
 endif
 
 echo 'socket repl plugin loaded!'

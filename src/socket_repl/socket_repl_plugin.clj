@@ -111,13 +111,23 @@
   (warn-if-disconnect* current-connection f))
 
 (defn get-rlog-buffer
-  "Returns a channel which contains the name of the buffer w/ b:rlog set, if
-  one exists."
+  "Returns the buffer w/ b:rlog set, if one exists."
   []
-  (->> (nvim/vim-get-buffers)
-       (filter #(nvim/buffer-get-var % "rlog"))
-       (map nvim/buffer-get-name)
-       first))
+  (some->> (nvim/vim-get-buffers)
+           (filter #(nvim/buffer-get-var % "rlog"))
+           first))
+
+(defn get-rlog-buffer-name
+  "Returns the name of the buffer w/ b:rlog set, if one exists."
+  []
+  (let [buffer (get-rlog-buffer)]
+    (when buffer (nvim/buffer-get-name buffer))))
+
+(defn get-rlog-buffer-number
+  "Returns the number of the buffer w/ b:rlog set, if one exists."
+  []
+  (let [buffer (get-rlog-buffer)]
+    (when buffer (nvim/buffer-get-number buffer))))
 
 (defn connect!
   "Connect to a socket repl. Adds the connection to the `current-connection`
@@ -224,7 +234,7 @@
           (go
             (let [original-window (nvim/vim-get-current-window)
                   buffer-cmd (first (message/params msg))
-                  rlog-buffer (get-rlog-buffer)
+                  rlog-buffer (get-rlog-buffer-name)
                   rlog-buffer-visible? (when rlog-buffer
                                          (<! (nvim/buffer-visible?-async
                                                rlog-buffer)))]
@@ -236,6 +246,18 @@
           ;; Don't return a core.async channel, else msgpack will fail to
           ;; serialize it.
           "success"))))
+
+  (nvim/register-method!
+    "dismiss-log"
+    (warn-if-disconnect
+      (fn [msg]
+        (update-last!)
+        (go
+          (nvim/vim-command
+            (format "bd! %s" (get-rlog-buffer-number))))
+        ;; Don't return a core.async channel, else msgpack will fail to
+        ;; serialize it.
+        "success")))
 
   ;; Don't need to do this in debug, socket repl will keep this alive.
   (when-not debug

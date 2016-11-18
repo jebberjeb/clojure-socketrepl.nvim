@@ -24,12 +24,11 @@ TODO alpha
 					buffer created by terminal has name we can't control
 					we could read it back in and store it
 				if not, :botright vnew, existing command
-		[_] After showing the log, return cursor to original buffer
-			Use it first, see if this feels right
-		[X] Closes (hides) with q? some other mapping?
-			Use it w/ q for now, see if something else better
+		[X] After showing the log, return cursor to original buffer
+		[X] Dismiss log w/ `q` from log buffer
+		[X] Dismiss log w/ `,drlog` from anywhere
 		[X] Auto-show any time an eval, doc, happens
-		[_] Add docs for this & customization story
+		[X] Add docs for this & customization story
 	[X] Pass host, port in connect
 		[X] Make sure :Connect works with no args, or host:port arg
 		[X] Update debug vimscript

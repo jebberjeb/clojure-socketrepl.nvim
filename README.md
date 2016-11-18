@@ -35,7 +35,8 @@ or
 ```
 
 The results of all repl activity are logged, and displayed in a buffer. To
-dismiss that log buffer, use `q` from within the log buffer.
+dismiss that log buffer, use `q` from within the log buffer, or
+`<leader>drlog` from any buffer.
 
 After dismissing the log, it may be resurrected.
 
