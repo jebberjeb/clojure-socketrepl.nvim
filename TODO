@@ -48,6 +48,10 @@ TODO alpha
 		[X] another clojure process w/ socket repl on 5555
 		[_] docs
 			You still have to :Connect from nvim
+	[_] Simplify async?
+		[_] get rid of async calls, use go?
+			Is this an improper use of go, will it block go's thread pool?
+			Should we use threads, or async/thread instead?
 	[_] Enhance debugging
 		How to reset state?
 			repl, rerun `connect!`, maybe just `go`

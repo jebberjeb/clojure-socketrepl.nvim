@@ -57,16 +57,11 @@
   (.print file-stream string)
   (.flush file-stream))
 
-(defn write-output!
-  "Like `write-output`, but uses the current socket repl connection."
-  [string]
-  (write-output @current-connection string))
-
-(defn write-error!
-  "Write a throwable's stack trace to the output file, using the current socket
-  repl connection."
-  [throwable]
-  (write-output!
+(defn write-error
+  "Write a throwable's stack trace to the output file."
+  [connection throwable]
+  (write-output
+    connection
     (str "\n##### PLUGIN ERR #####\n"
          (.getMessage throwable) "\n"
          (string/join "\n" (map str (.getStackTrace throwable)))
@@ -74,15 +69,10 @@
 
 (defn write-code
   "Writes a string of code to the socket repl connection."
-  [{:keys [:out]} code-string]
+  [{:keys [:out] :as connection} code-string]
+  (write-output connection (str code-string "\n"))
   (.println out code-string)
   (.flush out))
-
-(defn write-code!
-  "Like `write-code`, but uses the current socket repl connection."
-  [code-string]
-  (write-output @current-connection (str code-string "\n"))
-  (write-code @current-connection code-string))
 
 (defn update-last!
   "Update the last accessed time."
@@ -95,39 +85,35 @@
   ;; Choose one of the properties set by establishing the connection.
   (:host connection))
 
-(defn warn-if-disconnect*
-  [connection-atom f]
+(defn warn-if-disconnect
+  [nvim connection-atom f]
   (fn [msg]
     (if-not (connected-to-socket-repl? @connection-atom)
       (nvim/vim-command-async
+        nvim
         ":echo 'Use :Connect host:port to connect to a socket repl'"
         (fn [_]))
       (f msg))
     :done))
 
-(defn warn-if-disconnect
-  "Warn the user if not connected to a socket repl."
-  [f]
-  (warn-if-disconnect* current-connection f))
-
 (defn get-rlog-buffer
   "Returns the buffer w/ b:rlog set, if one exists."
-  []
-  (some->> (nvim/vim-get-buffers)
-           (filter #(nvim/buffer-get-var % "rlog"))
+  [nvim]
+  (some->> (nvim/vim-get-buffers nvim)
+           (filter #(nvim/buffer-get-var nvim % "rlog"))
            first))
 
 (defn get-rlog-buffer-name
   "Returns the name of the buffer w/ b:rlog set, if one exists."
-  []
-  (let [buffer (get-rlog-buffer)]
-    (when buffer (nvim/buffer-get-name buffer))))
+  [nvim]
+  (let [buffer (get-rlog-buffer nvim)]
+    (when buffer (nvim/buffer-get-name nvim buffer))))
 
 (defn get-rlog-buffer-number
   "Returns the number of the buffer w/ b:rlog set, if one exists."
-  []
-  (let [buffer (get-rlog-buffer)]
-    (when buffer (nvim/buffer-get-number buffer))))
+  [nvim]
+  (let [buffer (get-rlog-buffer nvim)]
+    (when buffer (nvim/buffer-get-number nvim buffer))))
 
 (defn connect!
   "Connect to a socket repl. Adds the connection to the `current-connection`
@@ -162,115 +148,136 @@
 
 (defn start
   [debug]
-  (if debug
-    (nvim/connect! "localhost" 7777)
-    (nvim/connect!))
+  (let [nvim (if debug
+               (nvim/new "localhost" 7777)
+               (nvim/new))]
 
-  (nvim/register-method!
-    "connect"
-    (fn [msg]
-      (let [[host port] (-> msg
-                            message/params
-                            first
-                            (string/split #":"))]
-        (update-last!)
-        (try
-          (connect! host port
-                    (fn [x]
-                      (write-output! x)))
-          (catch Throwable t
-            (log/error t "Error connecting to socket repl")
-            (nvim/vim-command-async
-              ":echo 'Unable to connect to socket repl.'"
-              (fn [_])))))))
-
-  (nvim/register-method!
-    "eval-code"
-    (warn-if-disconnect
+    (nvim/register-method!
+      nvim
+      "connect"
       (fn [msg]
-        (update-last!)
-        (go
-          (let [coords (nvim/get-cursor-location)
-                buffer-text (nvim/get-current-buffer-text)]
-            (try
-              (write-code! (get-form-at buffer-text coords))
-              (catch Throwable t
-                (log/error t "Error evaluating a form")
-                (write-error! t))))))))
+        (let [[host port] (-> msg
+                              message/params
+                              first
+                              (string/split #":"))]
+          (update-last!)
+          (try
+            (connect! host port
+                      (fn [x]
+                        (write-output @current-connection x)))
+            (catch Throwable t
+              (log/error t "Error connecting to socket repl")
+              (nvim/vim-command-async
+                nvim
+                ":echo 'Unable to connect to socket repl.'"
+                (fn [_])))))))
 
-  (nvim/register-method!
-    "eval-buffer"
-    (warn-if-disconnect
-      (fn [msg]
-        (update-last!)
-        (go
-          (let [buffer (nvim/vim-get-current-buffer)
-                filename (nvim/buffer-get-name buffer)]
-            (if (.exists (io/as-file filename))
-              (do
-                ;; Not sure if saving the file is really always what we want,
-                ;; but if we don't, stale data will be loaded.
-                (nvim/vim-command ":w")
-                (write-code! (format "(load-file \"%s\")" filename)))
-              (let [code (string/join "\n" (nvim/buffer-get-line-slice
-                                             buffer 0 -1))]
-                (write-code! (format "(eval '(do %s))" code)))))))))
-
-  (nvim/register-method!
-    "doc"
-    (warn-if-disconnect
-      (fn [msg]
-        (nvim/get-current-word-async
-          (fn [word]
-            (let [code (format "(clojure.repl/doc  %s)" word)]
-              (write-code! code)))))))
-
-  (nvim/register-method!
-    "show-log"
-    (warn-if-disconnect
-      (fn [msg]
-        (update-last!)
-        (let [file (-> @current-connection :file .getAbsolutePath)]
+    (nvim/register-method!
+      nvim
+      "eval-code"
+      (warn-if-disconnect
+        nvim
+        current-connection
+        (fn [msg]
+          (update-last!)
           (go
-            (let [original-window (nvim/vim-get-current-window)
-                  buffer-cmd (first (message/params msg))
-                  rlog-buffer (get-rlog-buffer-name)
-                  rlog-buffer-visible? (when rlog-buffer
-                                         (<! (nvim/buffer-visible?-async
-                                               rlog-buffer)))]
-              (when-not rlog-buffer-visible?
-                (nvim/vim-command
-                  (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s')"
-                          buffer-cmd file))
-                (nvim/vim-set-current-window original-window))))
+            (let [coords (nvim/get-cursor-location nvim)
+                  buffer-text (nvim/get-current-buffer-text nvim)]
+              (try
+                (write-code @current-connection (get-form-at buffer-text coords))
+                (catch Throwable t
+                  (log/error t "Error evaluating a form")
+                  (write-error @current-connection t))))))))
+
+    (nvim/register-method!
+      nvim
+      "eval-buffer"
+      (warn-if-disconnect
+        nvim
+        current-connection
+        (fn [msg]
+          (update-last!)
+          (go
+            (let [buffer (nvim/vim-get-current-buffer nvim)
+                  filename (nvim/buffer-get-name nvim buffer)]
+              (if (.exists (io/as-file filename))
+                (do
+                  ;; Not sure if saving the file is really always what we want,
+                  ;; but if we don't, stale data will be loaded.
+                  (nvim/vim-command nvim ":w")
+                  (write-code @current-connection
+                              (format "(load-file \"%s\")" filename)))
+                (let [code (string/join "\n" (nvim/buffer-get-line-slice
+                                               nvim buffer 0 -1))]
+                  (write-code @current-connection
+                              (format "(eval '(do %s))" code)))))))))
+
+    (nvim/register-method!
+      nvim
+      "doc"
+      (warn-if-disconnect
+        nvim
+        current-connection
+        (fn [msg]
+          (nvim/get-current-word-async
+            nvim
+            (fn [word]
+              (let [code (format "(clojure.repl/doc  %s)" word)]
+                (write-code @current-connection code)))))))
+
+    (nvim/register-method!
+      nvim
+      "show-log"
+      (warn-if-disconnect
+        nvim
+        current-connection
+        (fn [msg]
+          (update-last!)
+          (let [file (-> @current-connection :file .getAbsolutePath)]
+            (go
+              (let [original-window (nvim/vim-get-current-window nvim)
+                    buffer-cmd (first (message/params msg))
+                    rlog-buffer (get-rlog-buffer-name nvim)
+                    rlog-buffer-visible? (when rlog-buffer
+                                           (<! (nvim/buffer-visible?-async
+                                                 nvim rlog-buffer)))]
+                (when-not rlog-buffer-visible?
+                  (nvim/vim-command
+                    nvim
+                    (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s')"
+                            buffer-cmd file))
+                  (nvim/vim-set-current-window nvim original-window))))
+            ;; Don't return a core.async channel, else msgpack will fail to
+            ;; serialize it.
+            "success"))))
+
+    (nvim/register-method!
+      nvim
+      "dismiss-log"
+      (warn-if-disconnect
+        nvim
+        current-connection
+        (fn [msg]
+          (update-last!)
+          (go
+            (nvim/vim-command
+              nvim (format "bd! %s" (get-rlog-buffer-number nvim))))
           ;; Don't return a core.async channel, else msgpack will fail to
           ;; serialize it.
-          "success"))))
+          "success")))
 
-  (nvim/register-method!
-    "dismiss-log"
-    (warn-if-disconnect
-      (fn [msg]
-        (update-last!)
-        (go
-          (nvim/vim-command
-            (format "bd! %s" (get-rlog-buffer-number))))
-        ;; Don't return a core.async channel, else msgpack will fail to
-        ;; serialize it.
-        "success")))
+;; Don't need to do this in debug, socket repl will keep this alive.
+(when-not debug
+  (loop []
+    (Thread/sleep 30000)
+    (let [elapsed-msec (- (System/currentTimeMillis)
+                          (:last @current-connection))]
+      (when (< elapsed-msec (* 10 60000))
+        (recur))))
 
-  ;; Don't need to do this in debug, socket repl will keep this alive.
-  (when-not debug
-    (loop []
-      (Thread/sleep 30000)
-      (let [elapsed-msec (- (System/currentTimeMillis)
-                            (:last @current-connection))]
-        (when (< elapsed-msec (* 10 60000))
-          (recur))))
-
-    ;; Let nvim know we're shutting down.
-    (nvim/vim-command ":let g:is_running=0")
-    (nvim/vim-command ":echo 'plugin stopping.'")))
+  ;; Let nvim know we're shutting down.
+  (nvim/vim-command nvim ":let g:is_running=0")
+  (nvim/vim-command nvim ":echo 'plugin stopping.'"))))
 
 (defn -main
   [& args]
