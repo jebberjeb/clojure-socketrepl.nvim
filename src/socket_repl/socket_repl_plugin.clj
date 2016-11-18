@@ -110,15 +110,14 @@
   [f]
   (warn-if-disconnect* current-connection f))
 
-(defn get-rlog-buffer-async
+(defn get-rlog-buffer
   "Returns a channel which contains the name of the buffer w/ b:rlog set, if
   one exists."
   []
   (->> (nvim/vim-get-buffers)
        (filter #(nvim/buffer-get-var % "rlog"))
        (map nvim/buffer-get-name)
-       first
-       go))
+       first))
 
 (defn connect!
   "Connect to a socket repl. Adds the connection to the `current-connection`
@@ -223,16 +222,17 @@
         (update-last!)
         (let [file (-> @current-connection :file .getAbsolutePath)]
           (go
-            (let [buffer-cmd (first (message/params msg))
-                  rlog-buffer (<! (get-rlog-buffer-async))
+            (let [original-window (nvim/vim-get-current-window)
+                  buffer-cmd (first (message/params msg))
+                  rlog-buffer (get-rlog-buffer)
                   rlog-buffer-visible? (when rlog-buffer
                                          (<! (nvim/buffer-visible?-async
                                                rlog-buffer)))]
               (when-not rlog-buffer-visible?
-                (nvim/vim-command-async
+                (nvim/vim-command
                   (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s')"
-                          buffer-cmd file)
-                  (fn [_])))))
+                          buffer-cmd file))
+                (nvim/vim-set-current-window original-window))))
           ;; Don't return a core.async channel, else msgpack will fail to
           ;; serialize it.
           "success"))))
