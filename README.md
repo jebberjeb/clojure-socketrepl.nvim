@@ -60,6 +60,7 @@ are available to create your own mappings:
 :EvalForm
 :Doc
 :ReplLog
+:DismissReplLog
 ```
 
 ## Installation
