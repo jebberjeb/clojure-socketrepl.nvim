@@ -74,18 +74,13 @@
   (.println out code-string)
   (.flush out))
 
-(defn update-last!
-  "Update the last accessed time."
-  []
-  (swap! current-connection assoc :last (System/currentTimeMillis)))
-
 (defn connected-to-socket-repl?
   "Returns true if currently connected to a socket repl server."
   [connection]
   ;; Choose one of the properties set by establishing the connection.
   (:host connection))
 
-(defn warn-if-disconnect
+(defn run-command
   [nvim connection-atom f]
   (fn [msg]
     (if-not (connected-to-socket-repl? @connection-atom)
@@ -93,7 +88,9 @@
         nvim
         ":echo 'Use :Connect host:port to connect to a socket repl'"
         (fn [_]))
-      (f msg))
+      (do
+        (swap! connection-atom assoc :last (System/currentTimeMillis))
+        (f msg)))
     :done))
 
 (defn get-rlog-buffer
@@ -160,7 +157,6 @@
                               message/params
                               first
                               (string/split #":"))]
-          (update-last!)
           (try
             (connect! host port
                       (fn [x]
@@ -175,11 +171,10 @@
     (nvim/register-method!
       nvim
       "eval-code"
-      (warn-if-disconnect
+      (run-command
         nvim
         current-connection
         (fn [msg]
-          (update-last!)
           (go
             (let [coords (nvim/get-cursor-location nvim)
                   buffer-text (nvim/get-current-buffer-text nvim)]
@@ -192,11 +187,10 @@
     (nvim/register-method!
       nvim
       "eval-buffer"
-      (warn-if-disconnect
+      (run-command
         nvim
         current-connection
         (fn [msg]
-          (update-last!)
           (go
             (let [buffer (nvim/vim-get-current-buffer nvim)
                   filename (nvim/buffer-get-name nvim buffer)]
@@ -215,7 +209,7 @@
     (nvim/register-method!
       nvim
       "doc"
-      (warn-if-disconnect
+      (run-command
         nvim
         current-connection
         (fn [msg]
@@ -228,11 +222,10 @@
     (nvim/register-method!
       nvim
       "show-log"
-      (warn-if-disconnect
+      (run-command
         nvim
         current-connection
         (fn [msg]
-          (update-last!)
           (let [file (-> @current-connection :file .getAbsolutePath)]
             (go
               (let [original-window (nvim/vim-get-current-window nvim)
@@ -254,11 +247,10 @@
     (nvim/register-method!
       nvim
       "dismiss-log"
-      (warn-if-disconnect
+      (run-command
         nvim
         current-connection
         (fn [msg]
-          (update-last!)
           (go
             (nvim/vim-command
               nvim (format "bd! %s" (get-rlog-buffer-number nvim))))
