@@ -53,11 +53,11 @@ TODO alpha
 			Is this an improper use of go, will it block go's thread pool?
 			Should we use threads, or async/thread instead?
 	[_] Global state
-		Create a `new` fn
-		Create a `stop` fn
-		In `user`, go should start, and hang onto a ref maybe
-		`user` should also have a `reset` to stop -> start
+		[_] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`
+			[_] Make a repl log component
+			[_] Refactor names of things in the `socket-repl-cnn` atom
+		[_] test out closing
 	[_] Enhance debugging
 		How to reset state?
 			repl, rerun `connect!`, maybe just `go`

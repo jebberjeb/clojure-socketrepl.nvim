@@ -33,10 +33,6 @@
                        pos
                        (.lastIndexOf (subs code-str 0 pos) "("))))))
 
-(defn output-file
-  []
-  (File/createTempFile "socket-repl" ".txt"))
-
 (defn connection
   "Create a connection to a socket repl."
   [host port]
@@ -118,7 +114,7 @@
   [socket-repl-conn host port handler]
   (let [conn (connection host port)
         chan (async/chan 1024)
-        file (output-file)]
+        file (File/createTempFile "socket-repl" ".txt")]
     (reset! socket-repl-conn
             (assoc conn
                    :handler handler
@@ -141,9 +137,7 @@
         (when-let [x (<!! chan)]
           (log/info "writing to repl socket")
           (handler x)
-          (recur)))))
-
-  "success")
+          (recur))))))
 
 (defn start
   [{:keys [debug nvim socket-repl-conn] :as plugin}]
@@ -164,7 +158,8 @@
             (nvim/vim-command-async
               nvim
               ":echo 'Unable to connect to socket repl.'"
-              (fn [_])))))))
+              (fn [_]))))
+        :done)))
 
   (nvim/register-method!
     nvim
@@ -240,7 +235,7 @@
                 (nvim/vim-set-current-window nvim original-window))))
           ;; Don't return a core.async channel, else msgpack will fail to
           ;; serialize it.
-          "success"))))
+          :done))))
 
   (nvim/register-method!
     nvim
@@ -254,11 +249,16 @@
             nvim (format "bd! %s" (get-rlog-buffer-number nvim))))
         ;; Don't return a core.async channel, else msgpack will fail to
         ;; serialize it.
-        "success")))
-plugin)
+        :done)))
+  plugin)
 
 (defn stop
-  [plugin]
+  [{:keys [socket-repl-conn] :as plugin}]
+  (let [{:keys [chan file-stream out in]} @socket-repl-conn]
+    (.close file-stream)
+    (.close out)
+    (.close in)
+    (async/close! chan))
   plugin)
 
 (defn new
