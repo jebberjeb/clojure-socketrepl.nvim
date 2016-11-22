@@ -11,7 +11,8 @@
                                                     com.sun.jmdk/jmxtools
                                                     com.sun.jmx/jmxri]]
                  [neovim-client "0.1.0-SNAPSHOT"]]
-  :main ^:skip-aot socket-repl.socket-repl-plugin
+  :main ^:skip-aot socket-repl.system
   :target-path "target/%s"
   :profiles {:uberjar {:aot [clojure.tools.logging.impl
-                             socket-repl.socket-repl-plugin]}})
+                             socket-repl.socket-repl-plugin
+                             socket-repl.system]}})
