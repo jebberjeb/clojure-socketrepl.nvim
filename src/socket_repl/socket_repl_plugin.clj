@@ -7,7 +7,8 @@
     [clojure.string :as string]
     [clojure.tools.logging :as log]
     [neovim-client.message :as message]
-    [neovim-client.nvim :as nvim])
+    [neovim-client.nvim :as nvim]
+    [socket-repl.repl-log :as repl-log])
   (:import
     (java.net Socket)
     (java.io PrintStream File)))
@@ -44,17 +45,11 @@
               PrintStream.)
      :in (io/reader socket)}))
 
-(defn write-output
-  "Write a string to the output file."
-  [{:keys [:file-stream]} string]
-  (.print file-stream string)
-  (.flush file-stream))
-
 (defn write-error
-  "Write a throwable's stack trace to the output file."
-  [connection throwable]
-  (write-output
-    connection
+  "Write a throwable's stack trace to the repl log."
+  [repl-log throwable]
+  (repl-log/write
+    repl-log
     (str "\n##### PLUGIN ERR #####\n"
          (.getMessage throwable) "\n"
          (string/join "\n" (map str (.getStackTrace throwable)))
@@ -62,8 +57,8 @@
 
 (defn write-code
   "Writes a string of code to the socket repl connection."
-  [{:keys [:out] :as connection} code-string]
-  (write-output connection (str code-string "\n"))
+  [{:keys [:out] :as connection} repl-log code-string]
+  (repl-log/write repl-log (str code-string "\n"))
   (.println out code-string)
   (.flush out))
 
@@ -107,40 +102,21 @@
 
 (defn connect!
   "Connect to a socket repl. Adds the connection to the `socket-repl-conn`
-  atom. Creates `go-loop`s to delegate input from the socket to `handler` one
-  line at a time.
-
-  `handler` is a function which accepts one string argument."
-  [socket-repl-conn host port handler]
-  (let [conn (connection host port)
-        chan (async/chan 1024)
-        file (File/createTempFile "socket-repl" ".txt")]
+  atom. Write input from the socket to the repl-log component."
+  [{:keys [socket-repl-conn repl-log]} host port]
+  (let [conn (connection host port)]
     (reset! socket-repl-conn
             (assoc conn
-                   :handler handler
-                   :chan chan
-                   :file file
-                   :file-stream (PrintStream. file)
                    :last (System/currentTimeMillis)))
-
-    ;; input producer
     (future
       (loop []
         (log/info "reading from repl socket")
         (when-let [line (str (.readLine (:in conn)) "\n")]
-          (>!! chan line)
-          (recur))))
-
-    ;; input consumer
-    (future
-      (loop []
-        (when-let [x (<!! chan)]
-          (log/info "writing to repl socket")
-          (handler x)
+          (repl-log/write repl-log line)
           (recur))))))
 
 (defn start
-  [{:keys [debug nvim socket-repl-conn] :as plugin}]
+  [{:keys [debug nvim socket-repl-conn repl-log] :as plugin}]
   (nvim/register-method!
     nvim
     "connect"
@@ -150,9 +126,7 @@
                             first
                             (string/split #":"))]
         (try
-          (connect! socket-repl-conn host port
-                    (fn [x]
-                      (write-output @socket-repl-conn x)))
+          (connect! plugin host port)
           (catch Throwable t
             (log/error t "Error connecting to socket repl")
             (nvim/vim-command-async
@@ -172,10 +146,12 @@
           (let [coords (nvim/get-cursor-location nvim)
                 buffer-text (nvim/get-current-buffer-text nvim)]
             (try
-              (write-code @socket-repl-conn (get-form-at buffer-text coords))
+              (write-code @socket-repl-conn
+                          repl-log
+                          (get-form-at buffer-text coords))
               (catch Throwable t
                 (log/error t "Error evaluating a form")
-                (write-error @socket-repl-conn t))))))))
+                (write-error repl-log t))))))))
 
   (nvim/register-method!
     nvim
@@ -193,10 +169,12 @@
                 ;; but if we don't, stale data will be loaded.
                 (nvim/vim-command nvim ":w")
                 (write-code @socket-repl-conn
+                            repl-log
                             (format "(load-file \"%s\")" filename)))
               (let [code (string/join "\n" (nvim/buffer-get-line-slice
                                              nvim buffer 0 -1))]
                 (write-code @socket-repl-conn
+                            repl-log
                             (format "(eval '(do %s))" code)))))))))
 
   (nvim/register-method!
@@ -210,7 +188,7 @@
           nvim
           (fn [word]
             (let [code (format "(clojure.repl/doc  %s)" word)]
-              (write-code @socket-repl-conn code)))))))
+              (write-code @socket-repl-conn repl-log code)))))))
 
   (nvim/register-method!
     nvim
@@ -219,7 +197,7 @@
       nvim
       socket-repl-conn
       (fn [msg]
-        (let [file (-> @socket-repl-conn :file .getAbsolutePath)]
+        (let [file (-> repl-log repl-log/file .getAbsolutePath)]
           (go
             (let [original-window (nvim/vim-get-current-window nvim)
                   buffer-cmd (first (message/params msg))
@@ -254,15 +232,14 @@
 
 (defn stop
   [{:keys [socket-repl-conn] :as plugin}]
-  (let [{:keys [chan file-stream out in]} @socket-repl-conn]
-    (.close file-stream)
+  (let [{:keys [out in]} @socket-repl-conn]
     (.close out)
-    (.close in)
-    (async/close! chan))
+    (.close in))
   plugin)
 
 (defn new
-  [debug nvim]
+  [debug nvim repl-log]
   {:nvim nvim
+   :repl-log repl-log
    :debug debug
    :socket-repl-conn (atom nil)})
