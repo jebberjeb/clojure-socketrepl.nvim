@@ -76,9 +76,7 @@
         nvim
         ":echo 'Use :Connect host:port to connect to a socket repl'"
         (fn [_]))
-      (do
-        (swap! connection-atom assoc :last (System/currentTimeMillis))
-        (f msg)))
+      (f msg))
     :done))
 
 (defn get-rlog-buffer
@@ -105,9 +103,7 @@
   atom. Write input from the socket to the repl-log component."
   [{:keys [socket-repl-conn repl-log]} host port]
   (let [conn (connection host port)]
-    (reset! socket-repl-conn
-            (assoc conn
-                   :last (System/currentTimeMillis)))
+    (reset! socket-repl-conn conn)
     (future
       (loop []
         (log/info "reading from repl socket")
