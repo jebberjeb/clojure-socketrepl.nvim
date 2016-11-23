@@ -3,7 +3,8 @@
   (:require
     [neovim-client.nvim :as nvim]
     [socket-repl.socket-repl-plugin :as plugin]
-    [socket-repl.repl-log :as repl-log])
+    [socket-repl.repl-log :as repl-log]
+    [socket-repl.socket-repl :as socket-repl])
   (:gen-class))
 
 (defn new-system
@@ -12,15 +13,18 @@
   (let [nvim (if debug
                (nvim/new "localhost" 7777)
                (nvim/new))
-        repl-log (repl-log/start (repl-log/new))]
+        repl-log (repl-log/start (repl-log/new))
+        socket-repl (socket-repl/start (socket-repl/new repl-log))]
     {:nvim nvim
      :repl-log repl-log
-     :plugin (plugin/start (plugin/new debug nvim repl-log))}))
+     :socket-repl socket-repl
+     :plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))}))
 
 (defn stop
-  [{:keys [nvim plugin repl-log] :as system}]
+  [{:keys [nvim plugin repl-log socket-repl] :as system}]
   (plugin/stop plugin)
   (repl-log/stop repl-log)
+  (socket-repl/stop socket-repl)
   (nvim/stop nvim))
 
 (defn -main

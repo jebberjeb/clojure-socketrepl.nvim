@@ -55,9 +55,12 @@ TODO alpha
 	[_] Global state
 		[_] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`
-			[_] Make a repl log component
-			[_] Refactor names of things in the `socket-repl-cnn` atom
-		[_] test out closing
+			[X] Make a repl log component
+			[X] Refactor names of things in the `socket-repl-cnn` atom
+		[_] test out closing at repl
+		[_] Can we create a SocketRepl component which has state?
+			[X] first ver, depends on repl-log
+			[_] second ver, channel-based io routing?
 	[_] Enhance debugging
 		How to reset state?
 			repl, rerun `connect!`, maybe just `go`
