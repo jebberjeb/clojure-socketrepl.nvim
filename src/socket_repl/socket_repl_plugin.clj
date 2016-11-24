@@ -35,12 +35,11 @@
 (defn write-error
   "Write a throwable's stack trace to the repl log."
   [repl-log throwable]
-  (repl-log/write
-    repl-log
-    (str "\n##### PLUGIN ERR #####\n"
-         (.getMessage throwable) "\n"
-         (string/join "\n" (map str (.getStackTrace throwable)))
-         \n"######################\n")))
+  (async/>!! (repl-log/input-channel repl-log)
+             (str "\n##### PLUGIN ERR #####\n"
+                  (.getMessage throwable) "\n"
+                  (string/join "\n" (map str (.getStackTrace throwable)))
+                  \n"######################\n")))
 
 (defn run-command
   [nvim socket-repl f]

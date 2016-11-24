@@ -2,6 +2,7 @@
   "Provides a channel interface to socket repl input and output."
   (:require
     [clojure.java.io :as io]
+    [clojure.core.async :as async]
     [socket-repl.repl-log :as repl-log])
   (:import
     (java.net Socket)
@@ -11,7 +12,7 @@
   "Writes a string of code to the socket repl connection."
   [{:keys [repl-log connection]} code-string]
   (let [{:keys [print-stream]} @connection]
-    (repl-log/write repl-log (str code-string "\n"))
+    (async/>!! (repl-log/input-channel repl-log) code-string)
     (.println print-stream code-string)
     (.flush print-stream)))
 
@@ -26,8 +27,8 @@
                         :reader reader})
     (future
       (loop []
-        (when-let [line (str (.readLine reader) "\n")]
-          (repl-log/write repl-log line)
+        (when-let [line (.readLine reader)]
+          (async/>!! (repl-log/input-channel repl-log) line)
           (recur))))))
 
 (defn connected?
