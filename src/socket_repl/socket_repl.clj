@@ -2,23 +2,22 @@
   "Provides a channel interface to socket repl input and output."
   (:require
     [clojure.java.io :as io]
-    [clojure.core.async :as async]
-    [socket-repl.repl-log :as repl-log])
+    [clojure.core.async :as async])
   (:import
     (java.net Socket)
     (java.io PrintStream)))
 
 (defn write-code
   "Writes a string of code to the socket repl connection."
-  [{:keys [repl-log connection]} code-string]
+  [{:keys [connection output-channel]} code-string]
   (let [{:keys [print-stream]} @connection]
-    (async/>!! (repl-log/input-channel repl-log) code-string)
+    (async/>!! output-channel code-string)
     (.println print-stream code-string)
     (.flush print-stream)))
 
 (defn connect
   "Create a connection to a socket repl."
-  [{:keys [repl-log connection]} host port]
+  [{:keys [connection output-channel]} host port]
   (let [socket (java.net.Socket. host (Integer/parseInt port))
         reader (io/reader socket)]
     (reset! connection {:host host
@@ -28,8 +27,12 @@
     (future
       (loop []
         (when-let [line (.readLine reader)]
-          (async/>!! (repl-log/input-channel repl-log) line)
+          (async/>!! output-channel line)
           (recur))))))
+
+(defn output-channel
+  [socket-repl]
+  (:output-channel socket-repl))
 
 (defn connected?
   [{:keys [connection]}]
@@ -40,15 +43,16 @@
   socket-repl)
 
 (defn stop
-  [{:keys [connection] :as socket-repl}]
+  [{:keys [connection output-channel] :as socket-repl}]
   (let [{:keys [reader print-stream]} @connection]
     (.close reader)
     (.close print-stream))
+  (async/close! output-channel)
   socket-repl)
 
 (defn new
-  [repl-log]
-  {:repl-log repl-log
+  []
+  {:output-channel (async/chan 1024)
    :connection (atom {:host nil
                       :port nil
                       :reader nil

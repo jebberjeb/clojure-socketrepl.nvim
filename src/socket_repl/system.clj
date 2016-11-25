@@ -14,7 +14,15 @@
                (nvim/new "localhost" 7777)
                (nvim/new))
         repl-log (repl-log/start (repl-log/new))
-        socket-repl (socket-repl/start (socket-repl/new repl-log))]
+        socket-repl (socket-repl/start (socket-repl/new))]
+
+    ;; TODO - where should this live, if anywhere?
+    (clojure.core.async/pipe (socket-repl/output-channel socket-repl)
+                             (repl-log/input-channel repl-log))
+
+    ;; TODO - same for plugin? it generates output (code destined for repl)
+    ;; It can be fanned out, then piped to repl-log & socket (input)
+
     {:nvim nvim
      :repl-log repl-log
      :socket-repl socket-repl
