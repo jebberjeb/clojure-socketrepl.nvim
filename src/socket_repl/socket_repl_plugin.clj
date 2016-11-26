@@ -71,8 +71,12 @@
   (let [buffer (get-rlog-buffer nvim)]
     (when buffer (nvim/buffer-get-number nvim buffer))))
 
+(defn code-channel
+  [plugin]
+  (:code-channel plugin))
+
 (defn start
-  [{:keys [debug nvim repl-log socket-repl] :as plugin}]
+  [{:keys [debug nvim repl-log socket-repl code-channel] :as plugin}]
   (nvim/register-method!
     nvim
     "connect"
@@ -102,8 +106,7 @@
           (let [coords (nvim/get-cursor-location nvim)
                 buffer-text (nvim/get-current-buffer-text nvim)]
             (try
-              (socket-repl/write-code
-                socket-repl (get-form-at buffer-text coords))
+              (async/>! code-channel (get-form-at buffer-text coords))
               (catch Throwable t
                 (log/error t "Error evaluating a form")
                 (write-error repl-log t))))))))
@@ -123,12 +126,10 @@
                 ;; Not sure if saving the file is really always what we want,
                 ;; but if we don't, stale data will be loaded.
                 (nvim/vim-command nvim ":w")
-                (socket-repl/write-code
-                  socket-repl (format "(load-file \"%s\")" filename)))
+                (async/>! code-channel (format "(load-file \"%s\")" filename)))
               (let [code (string/join "\n" (nvim/buffer-get-line-slice
                                              nvim buffer 0 -1))]
-                (socket-repl/write-code
-                  socket-repl (format "(eval '(do %s))" code)))))))))
+                (async/>! code-channel (format "(eval '(do %s))" code)))))))))
 
   (nvim/register-method!
     nvim
@@ -141,7 +142,7 @@
           nvim
           (fn [word]
             (let [code (format "(clojure.repl/doc  %s)" word)]
-              (socket-repl/write-code socket-repl code)))))))
+              (async/>!! code-channel code)))))))
 
   (nvim/register-method!
     nvim
@@ -192,4 +193,5 @@
   {:nvim nvim
    :repl-log repl-log
    :socket-repl socket-repl
-   :debug debug})
+   :debug debug
+   :code-channel (async/chan 1024)})

@@ -7,11 +7,10 @@
     (java.net Socket)
     (java.io PrintStream)))
 
-(defn write-code
+(defn- write-code
   "Writes a string of code to the socket repl connection."
-  [{:keys [connection output-channel]} code-string]
+  [{:keys [connection]} code-string]
   (let [{:keys [print-stream]} @connection]
-    (async/>!! output-channel code-string)
     (.println print-stream code-string)
     (.flush print-stream)))
 
@@ -34,25 +33,37 @@
   [socket-repl]
   (:output-channel socket-repl))
 
+(defn input-channel
+  [socket-repl]
+  (:input-channel socket-repl))
+
 (defn connected?
   [{:keys [connection]}]
   (:host @connection))
 
 (defn start
-  [socket-repl]
+  [{:keys [input-channel] :as socket-repl}]
+  (async/thread
+    (loop []
+      (when-let [input (async/<!! input-channel)]
+        (when (connected? socket-repl)
+          (write-code socket-repl input))
+        (recur))))
   socket-repl)
 
 (defn stop
-  [{:keys [connection output-channel] :as socket-repl}]
+  [{:keys [connection output-channel input-channel] :as socket-repl}]
   (let [{:keys [reader print-stream]} @connection]
     (.close reader)
     (.close print-stream))
   (async/close! output-channel)
+  (async/close! input-channel)
   socket-repl)
 
 (defn new
   []
-  {:output-channel (async/chan 1024)
+  {:input-channel (async/chan 1024)
+   :output-channel (async/chan 1024)
    :connection (atom {:host nil
                       :port nil
                       :reader nil

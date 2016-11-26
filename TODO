@@ -61,10 +61,12 @@ TODO alpha
 		[_] Can we create a SocketRepl component which has state?
 			[X] first ver, depends on repl-log
 			[_] second ver, channel-based io routing?
-				phases
-					[X] add repl-log/input-channel
-					add socket-repl/output-channel (output of the socket)
-						wire them up w/ third component?
+				[X] add repl-log/input-channel
+				[X] add socket-repl/output-channel (output of the socket)
+				[_] plugin has output-channel, so we can fan it out to
+				the log and to the socket
+
+
 	[_] Enhance debugging
 		How to reset state?
 			repl, rerun `connect!`, maybe just `go`

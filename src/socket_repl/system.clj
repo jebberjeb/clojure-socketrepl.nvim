@@ -1,6 +1,7 @@
 (ns socket-repl.system
   "The system created by wiring various components together." 
   (:require
+    [clojure.core.async :as async]
     [neovim-client.nvim :as nvim]
     [socket-repl.socket-repl-plugin :as plugin]
     [socket-repl.repl-log :as repl-log]
@@ -14,19 +15,24 @@
                (nvim/new "localhost" 7777)
                (nvim/new))
         repl-log (repl-log/start (repl-log/new))
-        socket-repl (socket-repl/start (socket-repl/new))]
+        socket-repl (socket-repl/start (socket-repl/new))
+        plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))]
 
-    ;; TODO - where should this live, if anywhere?
-    (clojure.core.async/pipe (socket-repl/output-channel socket-repl)
-                             (repl-log/input-channel repl-log))
+    ;; TODO - this feels like part of the socket-repl startup, but doesn't
+    ;; have to be as the socket-repl doesn't need to know about the repl-log
+    (async/pipe (socket-repl/output-channel socket-repl)
+                (repl-log/input-channel repl-log))
 
-    ;; TODO - same for plugin? it generates output (code destined for repl)
-    ;; It can be fanned out, then piped to repl-log & socket (input)
+    ;; TODO - this feels like part of plugin startup, as it *has* to know
+    ;; about repl-log and socket-repl directly.
+    (let [mult (async/mult (plugin/code-channel plugin))]
+      (async/tap mult (socket-repl/input-channel socket-repl))
+      (async/tap mult (repl-log/input-channel repl-log)))
 
     {:nvim nvim
      :repl-log repl-log
      :socket-repl socket-repl
-     :plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))}))
+     :plugin plugin}))
 
 (defn stop
   [{:keys [nvim plugin repl-log socket-repl] :as system}]
