@@ -2,7 +2,7 @@
   "A plugin which connects to a running socket repl and sends output back to
   Neovim."
   (:require
-    [clojure.core.async :as async :refer [go go-loop >! <! >!! <!!]]
+    [clojure.core.async :as async]
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
@@ -102,11 +102,11 @@
       nvim
       socket-repl
       (fn [msg]
-        (go
+        (async/thread
           (let [coords (nvim/get-cursor-location nvim)
                 buffer-text (nvim/get-current-buffer-text nvim)]
             (try
-              (async/>! code-channel (get-form-at buffer-text coords))
+              (async/>!! code-channel (get-form-at buffer-text coords))
               (catch Throwable t
                 (log/error t "Error evaluating a form")
                 (write-error repl-log t))))))))
@@ -118,7 +118,7 @@
       nvim
       socket-repl
       (fn [msg]
-        (go
+        (async/thread
           (let [buffer (nvim/vim-get-current-buffer nvim)
                 filename (nvim/buffer-get-name nvim buffer)]
             (if (.exists (io/as-file filename))
@@ -126,10 +126,10 @@
                 ;; Not sure if saving the file is really always what we want,
                 ;; but if we don't, stale data will be loaded.
                 (nvim/vim-command nvim ":w")
-                (async/>! code-channel (format "(load-file \"%s\")" filename)))
+                (async/>!! code-channel (format "(load-file \"%s\")" filename)))
               (let [code (string/join "\n" (nvim/buffer-get-line-slice
                                              nvim buffer 0 -1))]
-                (async/>! code-channel (format "(eval '(do %s))" code)))))))))
+                (async/>!! code-channel (format "(eval '(do %s))" code)))))))))
 
   (nvim/register-method!
     nvim
@@ -152,13 +152,13 @@
       socket-repl
       (fn [msg]
         (let [file (-> repl-log repl-log/file .getAbsolutePath)]
-          (go
+          (async/thread
             (let [original-window (nvim/vim-get-current-window nvim)
                   buffer-cmd (first (message/params msg))
                   rlog-buffer (get-rlog-buffer-name nvim)
                   rlog-buffer-visible? (when rlog-buffer
-                                         (<! (nvim/buffer-visible?-async
-                                               nvim rlog-buffer)))]
+                                         (async/<!! (nvim/buffer-visible?-async
+                                                      nvim rlog-buffer)))]
               (when-not rlog-buffer-visible?
                 (nvim/vim-command
                   nvim
@@ -176,7 +176,7 @@
       nvim
       socket-repl
       (fn [msg]
-        (go
+        (async/thread
           (nvim/vim-command
             nvim (format "bd! %s" (get-rlog-buffer-number nvim))))
         ;; Don't return a core.async channel, else msgpack will fail to
@@ -186,6 +186,7 @@
 
 (defn stop
   [plugin]
+  (async/close! (:code-channel plugin))
   plugin)
 
 (defn new

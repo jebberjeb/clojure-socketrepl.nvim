@@ -1,4 +1,5 @@
 (ns socket-repl.repl-log
+  "Writes (presumably socket output) to the repl log."
   (:require
     [clojure.core.async :as async])
   (:import

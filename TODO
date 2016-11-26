@@ -48,22 +48,20 @@ TODO alpha
 		[X] another clojure process w/ socket repl on 5555
 		[_] docs
 			You still have to :Connect from nvim
-	[_] Simplify async?
-		[_] get rid of async calls, use go?
-			Is this an improper use of go, will it block go's thread pool?
-			Should we use threads, or async/thread instead?
+	[X] Fix `go` usage, no i/o
+	[_] Can we use a multimethod rather than register-method?
 	[_] Global state
 		[_] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`
 			[X] Make a repl log component
 			[X] Refactor names of things in the `socket-repl-cnn` atom
 		[_] test out closing at repl
-		[_] Can we create a SocketRepl component which has state?
+		[X] Can we create a SocketRepl component which has state?
 			[X] first ver, depends on repl-log
-			[_] second ver, channel-based io routing?
+			[X] second ver, channel-based io routing?
 				[X] add repl-log/input-channel
 				[X] add socket-repl/output-channel (output of the socket)
-				[_] plugin has output-channel, so we can fan it out to
+				[X] plugin has output-channel, so we can fan it out to
 				the log and to the socket
 
 
