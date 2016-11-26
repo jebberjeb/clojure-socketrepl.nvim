@@ -50,6 +50,7 @@ TODO alpha
 			You still have to :Connect from nvim
 	[X] Fix `go` usage, no i/o
 	[_] Can we use a multimethod rather than register-method?
+		possibly wrap w/ async/thread
 	[_] Global state
 		[_] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`

@@ -89,10 +89,9 @@
           (socket-repl/connect socket-repl host port)
           (catch Throwable t
             (log/error t "Error connecting to socket repl")
-            (nvim/vim-command-async
-              nvim
-              ":echo 'Unable to connect to socket repl.'"
-              (fn [_]))))
+            (async/thread (nvim/vim-command
+                            nvim
+                            ":echo 'Unable to connect to socket repl.'"))))
         :done)))
 
   (nvim/register-method!
