@@ -68,5 +68,3 @@ if !exists('g:disable_socket_repl_mappings')
     nnoremap <leader>rlog :ReplLog<cr>
     nnoremap <leader>drlog :DismissReplLog<cr>
 endif
-
-echo 'socket repl plugin loaded!'
