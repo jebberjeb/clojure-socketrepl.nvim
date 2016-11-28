@@ -49,21 +49,15 @@ TODO alpha
 		[_] docs
 			You still have to :Connect from nvim
 	[X] Fix `go` usage, no i/o
-	[_] Can we use a multimethod rather than register-method?
-		possibly wrap w/ async/thread
 	[_] Global state
-		[_] `user` should also have a `reset` to stop -> start
+		[X] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`
 			[X] Make a repl log component
 			[X] Refactor names of things in the `socket-repl-cnn` atom
 		[_] test out closing at repl
-		[X] Can we create a SocketRepl component which has state?
-			[X] first ver, depends on repl-log
-			[X] second ver, channel-based io routing?
-				[X] add repl-log/input-channel
-				[X] add socket-repl/output-channel (output of the socket)
-				[X] plugin has output-channel, so we can fan it out to
-				the log and to the socket
+	[_] Can we use a multimethod rather than register-method?
+		possibly wrap w/ async/thread
+
 
 
 	[_] Enhance debugging
