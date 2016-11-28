@@ -4,7 +4,7 @@ let g:channel = -1
 
 function! StartIfNotRunning()
     if g:is_running == 0
-        echo 'starting plugin...'
+        echo 'Starting SocketREPL client...'
         let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'
         let g:channel = rpcstart('java', ['-jar', jar_file_path])
         let g:is_running = 1
