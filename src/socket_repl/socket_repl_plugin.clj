@@ -49,6 +49,7 @@
         (nvim/vim-command
           nvim ":echo 'Use :Connect host:port to connect to a socket repl'"))
       (async/thread (f msg)))
+    ;; Don't return an async channel, return something msg-pack can serialize.
     :done))
 
 (defn get-rlog-buffer
@@ -155,10 +156,7 @@
                 nvim
                 (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s') | :set ft=clojurerepl"
                         buffer-cmd file))
-              (nvim/vim-set-current-window nvim original-window)))
-          ;; Don't return a core.async channel, else msgpack will fail to
-          ;; serialize it.
-          :done))))
+              (nvim/vim-set-current-window nvim original-window)))))))
 
   (nvim/register-method!
     nvim
@@ -167,10 +165,7 @@
       plugin
       (fn [msg]
         (nvim/vim-command
-          nvim (format "bd! %s" (get-rlog-buffer-number nvim)))
-        ;; Don't return a core.async channel, else msgpack will fail to
-        ;; serialize it.
-        :done)))
+          nvim (format "bd! %s" (get-rlog-buffer-number nvim))))))
   plugin)
 
 (defn stop
