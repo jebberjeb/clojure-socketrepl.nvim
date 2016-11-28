@@ -153,7 +153,7 @@
             (when-not rlog-buffer-visible?
               (nvim/vim-command
                 nvim
-                (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s')"
+                (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s') | :set ft=clojurerepl"
                         buffer-cmd file))
               (nvim/vim-set-current-window nvim original-window)))
           ;; Don't return a core.async channel, else msgpack will fail to
