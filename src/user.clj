@@ -5,7 +5,15 @@
     [socket-repl.socket-repl-plugin :as plugin]
     [socket-repl.system :as system]))
 
+(def system-atom (atom nil))
+
 (defn go
   "Start the plugin."
   []
-  (system/new-system true))
+  (reset! system-atom (system/new-system true)))
+
+(defn reset
+  []
+  (system/stop @system-atom)
+  (refresh)
+  (go))
