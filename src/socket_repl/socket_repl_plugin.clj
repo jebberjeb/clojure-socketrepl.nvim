@@ -77,6 +77,13 @@
 
 (defn start
   [{:keys [debug nvim repl-log socket-repl code-channel] :as plugin}]
+
+  ;; Wire sub-component io.
+  (let [mult (async/mult code-channel)]
+    (async/tap mult (socket-repl/input-channel socket-repl))
+    (async/tap mult (repl-log/input-channel repl-log)))
+
+  ;; Setup plugin functions.
   (nvim/register-method!
     nvim
     "connect"

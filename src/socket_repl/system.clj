@@ -17,13 +17,6 @@
         socket-repl (socket-repl/start (socket-repl/new))
         repl-log (repl-log/start (repl-log/new socket-repl))
         plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))]
-
-    ;; TODO - this feels like part of plugin startup, as it *has* to know
-    ;; about repl-log and socket-repl directly.
-    (let [mult (async/mult (plugin/code-channel plugin))]
-      (async/tap mult (socket-repl/input-channel socket-repl))
-      (async/tap mult (repl-log/input-channel repl-log)))
-
     {:nvim nvim
      :repl-log repl-log
      :socket-repl socket-repl
