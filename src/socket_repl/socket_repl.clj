@@ -14,6 +14,11 @@
     (.println print-stream code-string)
     (.flush print-stream)))
 
+(defn subscribe-output
+  "Pipes the socket repl output to `chan`"
+  [{:keys [output-channel]} chan]
+  (async/pipe output-channel chan))
+
 (defn connect
   "Create a connection to a socket repl."
   [{:keys [connection output-channel]} host port]

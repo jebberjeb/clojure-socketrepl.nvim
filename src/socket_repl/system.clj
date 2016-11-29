@@ -14,14 +14,9 @@
   (let [nvim (if debug
                (nvim/new "localhost" 7777)
                (nvim/new))
-        repl-log (repl-log/start (repl-log/new))
         socket-repl (socket-repl/start (socket-repl/new))
+        repl-log (repl-log/start (repl-log/new socket-repl))
         plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))]
-
-    ;; TODO - this feels like part of the socket-repl startup, but doesn't
-    ;; have to be as the socket-repl doesn't need to know about the repl-log
-    (async/pipe (socket-repl/output-channel socket-repl)
-                (repl-log/input-channel repl-log))
 
     ;; TODO - this feels like part of plugin startup, as it *has* to know
     ;; about repl-log and socket-repl directly.
