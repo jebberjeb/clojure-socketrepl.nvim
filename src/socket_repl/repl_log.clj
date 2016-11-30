@@ -2,7 +2,8 @@
   "Writes (presumably socket output) to the repl log."
   (:require
     [clojure.core.async :as async]
-    [socket-repl.socket-repl :as socket-repl])
+    [socket-repl.socket-repl :as socket-repl]
+    [socket-repl.util :refer [log-start log-stop]])
   (:import
     (java.io PrintStream File)))
 
@@ -19,24 +20,28 @@
 (defn start
   [{:keys [file input-channel socket-repl] :as repl-log}]
 
-  ;; Subscribe to socket-repl output.
-  (socket-repl/subscribe-output socket-repl input-channel)
+  (log-start
+    "repl-log"
+    ;; Subscribe to socket-repl output.
+    (socket-repl/subscribe-output socket-repl input-channel)
 
-  ;; Write input to file.
-  (let [print-stream (PrintStream. file)]
-    (async/thread
-      (loop []
-        (when-let [input (async/<!! input-channel)]
-          (.println print-stream input)
-          (.flush print-stream)
-          (recur))))
-    (assoc repl-log :print-stream print-stream)))
+    ;; Write input to file.
+    (let [print-stream (PrintStream. file)]
+      (async/thread
+        (loop []
+          (when-let [input (async/<!! input-channel)]
+            (.println print-stream (str input "FOO"))
+            (.flush print-stream)
+            (recur))))
+      (assoc repl-log :print-stream print-stream))))
 
 (defn stop
   [{:keys [print-stream input-channel] :as repl-log}]
-  (.close print-stream)
-  (async/close! input-channel)
-  (dissoc repl-log :print-stream :input-channel))
+  (log-stop
+    "repl-log"
+    (.close print-stream)
+    (async/close! input-channel)
+    (dissoc repl-log :print-stream :input-channel)))
 
 (defn new
   [socket-repl]

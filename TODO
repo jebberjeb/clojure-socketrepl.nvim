@@ -41,34 +41,24 @@ TODO alpha
 		Connection localhost:3333
 		Then trying an ,eb doesn't fail gracefully
 		->Exception in logs, current-connection still nil?
-	[_] Script debugging
+	[X] Script debugging
 		[X] nvim listening to socket, sourced debug script
 		[X] plugin process running a repl
 			[X] automatically connect to nvim, with socketrepl main
 		[X] another clojure process w/ socket repl on 5555
-		[_] docs
+		[X] docs
 			You still have to :Connect from nvim
 	[X] Fix `go` usage, no i/o
-	[_] Global state
+	[X] Global state
 		[X] `user` should also have a `reset` to stop -> start
 		Working towards getting rid of `current-connection`
 			[X] Make a repl log component
 			[X] Refactor names of things in the `socket-repl-cnn` atom
-		[_] test out closing at repl
 	[_] Can we use a multimethod rather than register-method?
 		possibly wrap w/ async/thread
 
-
-
 	[_] Enhance debugging
-		How to reset state?
-			repl, rerun `connect!`, maybe just `go`
-			nvim channel 1 will be fubar, how to replace?
-				debug script when sourced increments channel
-
-TODO next
-	[_] Rather than explicit repl output logging, can we intercept
-		channel
-		stream implementation
-	[X] Shut down the plugin if no input received for one minute
-	[X] evaluate form under cursor
+		[_] Comment new debug script function
+		[_] Document / video process for debugging, including refresh, restart
+			and reconnect
+		[_] debug restart function should close repl log

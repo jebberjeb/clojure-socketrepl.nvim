@@ -17,3 +17,7 @@
   (system/stop @system-atom)
   (refresh)
   (go))
+
+(defn stop
+  []
+  (system/stop @system-atom))
