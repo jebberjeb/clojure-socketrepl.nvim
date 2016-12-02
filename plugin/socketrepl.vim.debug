@@ -1,9 +1,9 @@
 let g:is_running = 0
-let g:channel = -1
+let g:channel = 0
 
 "When the plugin is restarted at the repl, it reconnects, using the next
 "available channel.
-1function! PluginRestart()
+function! PluginRestart()
     let g:is_running = 0
 endfunction
 

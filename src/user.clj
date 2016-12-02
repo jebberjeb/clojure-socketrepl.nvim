@@ -12,12 +12,11 @@
   []
   (reset! system-atom (system/new-system true)))
 
-(defn reset
-  []
-  (system/stop @system-atom)
-  (refresh)
-  (go))
-
 (defn stop
   []
   (system/stop @system-atom))
+
+(defn reset
+  []
+  (system/stop @system-atom)
+  (refresh :after `go))

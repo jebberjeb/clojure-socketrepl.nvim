@@ -179,9 +179,14 @@
     plugin))
 
 (defn stop
-  [plugin]
+  [{:keys [nvim] :as plugin}]
   (log-stop
     "plugin"
+
+    ;; Close the repl log buffer
+    (nvim/vim-command
+      nvim (format "bd! %s" (get-rlog-buffer-number nvim)))
+
     (async/close! (:code-channel plugin))
     plugin))
 
