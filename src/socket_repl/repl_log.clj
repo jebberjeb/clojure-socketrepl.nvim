@@ -30,7 +30,7 @@
       (async/thread
         (loop []
           (when-let [input (async/<!! input-channel)]
-            (.println print-stream (str input "FOO"))
+            (.println print-stream input)
             (.flush print-stream)
             (recur))))
       (assoc repl-log :print-stream print-stream))))
