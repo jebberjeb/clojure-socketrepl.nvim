@@ -14,7 +14,8 @@
 
 (defn stop
   []
-  (system/stop @system-atom))
+  (system/stop @system-atom)
+  (reset! system-atom nil))
 
 (defn reset
   []
