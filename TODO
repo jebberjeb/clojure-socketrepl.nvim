@@ -58,7 +58,7 @@ TODO alpha
 		possibly wrap w/ async/thread
 
 	[_] Enhance debugging
-		[_] Comment new debug script function
-		[_] Document / video process for debugging, including refresh, restart
+		[X] Comment new debug script function
+		[_] [NEXT] Document / video process for debugging, including refresh, restart
 			and reconnect
-		[_] debug restart function should close repl log
+		[X] debug restart function should close repl log
