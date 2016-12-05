@@ -7,6 +7,11 @@
 
 (def system-atom (atom nil))
 
+(defn nvim
+  "Get the nvim component, for convenience"
+  []
+  (:nvim @system-atom))
+
 (defn go
   "Start the plugin."
   []
