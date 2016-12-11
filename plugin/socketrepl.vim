@@ -6,7 +6,7 @@ function! StartIfNotRunning()
     if g:is_running == 0
         echo 'Starting SocketREPL client...'
         let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'
-        let g:channel = rpcstart('java', ['-jar', jar_file_path])
+        let g:channel = rpcstart('stdbuf', ['--input=0', '--output=0', 'java', '-jar', jar_file_path])
         let g:is_running = 1
     endif
 endfunction
@@ -42,6 +42,8 @@ command! EvalCode call EvalCode()
 function! ReplLog(buffer_cmd)
     call StartIfNotRunning()
     let res = rpcrequest(g:channel, 'show-log', a:buffer_cmd)
+    " Response to no-op will 'flush' plugin -> neovim message 'buffer'
+    call rpcrequest(g:channel, 'no-op', '')
     return res
 endfunction
 command! ReplLog call ReplLog(':botright new')
@@ -49,6 +51,8 @@ command! ReplLog call ReplLog(':botright new')
 function! DismissReplLog()
     call StartIfNotRunning()
     let res = rpcrequest(g:channel, 'dismiss-log', [])
+    " Response to no-op will 'flush' plugin -> neovim message 'buffer'
+    call rpcrequest(g:channel, 'no-op', '')
     return res
 endfunction
 command! DismissReplLog call DismissReplLog()
