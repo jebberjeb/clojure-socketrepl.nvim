@@ -1,12 +1,12 @@
 let s:p_dir = expand('<sfile>:p:h')
 let g:is_running = 0
-let g:channel = -1
+let g:nvim_tcp_plugin_channel = 0
 
 function! StartIfNotRunning()
     if g:is_running == 0
         echo 'Starting SocketREPL client...'
         let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'
-        let g:channel = rpcstart('stdbuf', ['--input=0', '--output=0', 'java', '-jar', jar_file_path])
+        call jobstart(['java', '-jar', jar_file_path], {'rpc': v:true})
         let g:is_running = 1
     endif
 endfunction
@@ -18,7 +18,7 @@ function! Connect(host_colon_port)
     else
         let conn = a:host_colon_port
     endif
-    let res = rpcrequest(g:channel, 'connect', conn)
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'connect', conn)
     return res
 endfunction
 command! -nargs=? Connect call Connect("<args>")
@@ -26,7 +26,7 @@ command! -nargs=? Connect call Connect("<args>")
 function! EvalBuffer()
     call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(g:channel, 'eval-buffer', [])
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'eval-buffer', [])
     return res
 endfunction
 command! EvalBuffer call EvalBuffer()
@@ -34,25 +34,21 @@ command! EvalBuffer call EvalBuffer()
 function! EvalCode()
     call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(g:channel, 'eval-code', [])
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'eval-code', [])
     return res
 endfunction
 command! EvalCode call EvalCode()
 
 function! ReplLog(buffer_cmd)
     call StartIfNotRunning()
-    let res = rpcrequest(g:channel, 'show-log', a:buffer_cmd)
-    " Response to no-op will 'flush' plugin -> neovim message 'buffer'
-    call rpcrequest(g:channel, 'no-op', '')
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'show-log', a:buffer_cmd)
     return res
 endfunction
 command! ReplLog call ReplLog(':botright new')
 
 function! DismissReplLog()
     call StartIfNotRunning()
-    let res = rpcrequest(g:channel, 'dismiss-log', [])
-    " Response to no-op will 'flush' plugin -> neovim message 'buffer'
-    call rpcrequest(g:channel, 'no-op', '')
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'dismiss-log', [])
     return res
 endfunction
 command! DismissReplLog call DismissReplLog()
@@ -60,7 +56,7 @@ command! DismissReplLog call DismissReplLog()
 function! Doc()
     call StartIfNotRunning()
     ReplLog
-    let res = rpcrequest(g:channel, 'doc', [])
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'doc', [])
     return res
 endfunction
 command! Doc call Doc()
