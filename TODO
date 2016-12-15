@@ -59,6 +59,18 @@ TODO alpha
 
 	[_] Enhance debugging
 		[X] Comment new debug script function
-		[_] [NEXT] Document / video process for debugging, including refresh, restart
+		[X] Starting plugin should be async, locked, subsequent calls
+		to start whilie in progress tell you its starting
+			[X] plugin script has global status var
+				let g:..._ready = 0
+			[X] plugin notifies neovim that it is ready
+				echo "started"
+				let g:..._ready = 1
+			[X] plugin script blocks commands until ready
+				echo "not started"
+			[X] start the jar on plugin load, unless user disables it by
+			setting a global var
+			[X] provide a :Start command to run it manually
+		[_] Document / video process for debugging, including refresh, restart
 			and reconnect
 		[X] debug restart function should close repl log

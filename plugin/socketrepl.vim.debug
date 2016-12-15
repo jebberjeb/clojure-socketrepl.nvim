@@ -1,10 +1,6 @@
 let g:nvim_tcp_plugin_channel = 0
 
-function! StartIfNotRunning()
-endfunction
-
 function! Connect(host_colon_port)
-    call StartIfNotRunning()
     if a:host_colon_port == ""
         let conn = "localhost:5555"
     else
@@ -16,7 +12,6 @@ endfunction
 command! -nargs=? Connect call Connect("<args>")
 
 function! EvalBuffer()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcrequest(g:nvim_tcp_plugin_channel, 'eval-buffer', [])
     return res
@@ -24,7 +19,6 @@ endfunction
 command! EvalBuffer call EvalBuffer()
 
 function! EvalCode()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcrequest(g:nvim_tcp_plugin_channel, 'eval-code', [])
     return res
@@ -32,21 +26,18 @@ endfunction
 command! EvalCode call EvalCode()
 
 function! ReplLog(buffer_cmd)
-    call StartIfNotRunning()
     let res = rpcrequest(g:nvim_tcp_plugin_channel, 'show-log', a:buffer_cmd)
     return res
 endfunction
 command! ReplLog call ReplLog(':botright new')
 
 function! DismissReplLog()
-    call StartIfNotRunning()
     let res = rpcrequest(g:nvim_tcp_plugin_channel, 'dismiss-log', [])
     return res
 endfunction
 command! DismissReplLog call DismissReplLog()
 
 function! Doc()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcrequest(g:nvim_tcp_plugin_channel, 'doc', [])
     return res

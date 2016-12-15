@@ -176,6 +176,11 @@
         (fn [msg]
           (nvim/vim-command
             nvim (format "bd! %s" (get-rlog-buffer-number nvim))))))
+
+    (async/thread
+      (nvim/vim-command nvim "let g:socket_repl_plugin_ready = 1")
+      (nvim/vim-command nvim "echo 'SocketREPL plugin ready'"))
+
     plugin))
 
 (defn stop

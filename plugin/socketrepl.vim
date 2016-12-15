@@ -1,18 +1,21 @@
 let s:p_dir = expand('<sfile>:p:h')
 let g:is_running = 0
+let g:socket_repl_plugin_ready = 0
 let g:nvim_tcp_plugin_channel = 0
+
+let s:not_ready = "SocketREPL plugin not ready (starting)"
 
 function! StartIfNotRunning()
     if g:is_running == 0
-        echo 'Starting SocketREPL client...'
+        echo 'Starting SocketREPL plugin...'
         let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'
         call jobstart(['java', '-jar', jar_file_path], {'rpc': v:true})
         let g:is_running = 1
     endif
 endfunction
+command! Start call StartIfNotRunning()
 
 function! Connect(host_colon_port)
-    call StartIfNotRunning()
     if a:host_colon_port == ""
         let conn = "localhost:5555"
     else
@@ -21,45 +24,88 @@ function! Connect(host_colon_port)
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'connect', conn)
     return res
 endfunction
-command! -nargs=? Connect call Connect("<args>")
+
+function! ReadyConnect(host_colon_port)
+    if g:socket_repl_plugin_ready == 1
+        call Connect(a:host_colon_port)
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! -nargs=? Connect call ReadyConnect("<args>")
 
 function! EvalBuffer()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'eval-buffer', [])
     return res
 endfunction
-command! EvalBuffer call EvalBuffer()
+
+function! ReadyEvalBuffer()
+    if g:socket_repl_plugin_ready == 1
+        call EvalBuffer()
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! EvalBuffer call ReadyEvalBuffer()
 
 function! EvalCode()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'eval-code', [])
     return res
 endfunction
-command! EvalCode call EvalCode()
+
+function! ReadyEvalCode()
+    if g:socket_repl_plugin_ready == 1
+        call EvalCode()
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! EvalCode call ReadyEvalCode()
 
 function! ReplLog(buffer_cmd)
-    call StartIfNotRunning()
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'show-log', a:buffer_cmd)
     return res
 endfunction
-command! ReplLog call ReplLog(':botright new')
+
+function! ReadyReplLog(buffer_cmd)
+    if g:socket_repl_plugin_ready == 1
+        call ReplLog(a:buffer_cmd)
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! ReplLog call ReadyReplLog(':botright new')
 
 function! DismissReplLog()
-    call StartIfNotRunning()
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'dismiss-log', [])
     return res
 endfunction
-command! DismissReplLog call DismissReplLog()
+
+function! ReadyDismissReplLog()
+    if g:socket_repl_plugin_ready == 1
+        call DismissReplLog()
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! DismissReplLog call ReadyDismissReplLog()
 
 function! Doc()
-    call StartIfNotRunning()
     ReplLog
     let res = rpcnotify(g:nvim_tcp_plugin_channel, 'doc', [])
     return res
 endfunction
-command! Doc call Doc()
+
+function! ReadyDoc()
+    if g:socket_repl_plugin_ready == 1
+        call Doc()
+    else
+        echo s:not_ready
+    endif
+endfunction
+command! Doc call ReadyDoc()
 
 if !exists('g:disable_socket_repl_mappings')
     nnoremap <leader>eb :EvalBuffer<cr>
@@ -67,4 +113,8 @@ if !exists('g:disable_socket_repl_mappings')
     nnoremap <leader>doc :Doc<cr>
     nnoremap <leader>rlog :ReplLog<cr>
     nnoremap <leader>drlog :DismissReplLog<cr>
+endif
+
+if !exists('g:manually_start_socket_repl_plugin')
+    call StartIfNotRunning()
 endif
