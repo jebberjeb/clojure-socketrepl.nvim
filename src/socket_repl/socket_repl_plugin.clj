@@ -77,7 +77,7 @@
   (:code-channel plugin))
 
 (defn start
-  [{:keys [debug nvim repl-log socket-repl code-channel] :as plugin}]
+  [{:keys [nvim repl-log socket-repl code-channel] :as plugin}]
 
   ;; Wire sub-component io.
   (log-start
@@ -191,9 +191,8 @@
     plugin))
 
 (defn new
-  [debug nvim repl-log socket-repl]
+  [nvim repl-log socket-repl]
   {:nvim nvim
    :repl-log repl-log
    :socket-repl socket-repl
-   :debug debug
    :code-channel (async/chan 1024)})

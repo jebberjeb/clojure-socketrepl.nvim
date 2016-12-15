@@ -2,25 +2,33 @@
   "The system created by wiring various components together." 
   (:require
     [clojure.core.async :as async]
+    [clojure.tools.logging :as log]
     [neovim-client.nvim :as nvim]
     [socket-repl.socket-repl-plugin :as plugin]
     [socket-repl.repl-log :as repl-log]
     [socket-repl.socket-repl :as socket-repl])
   (:gen-class))
 
-(defn new-system
-  [debug]
-  ;; TODO - separate new & start in nvim
-  (let [nvim (if debug
-               (nvim/new "localhost" 7777)
-               (nvim/new))
-        socket-repl (socket-repl/start (socket-repl/new))
+(defn new-system*
+  [nvim]
+  (let [socket-repl (socket-repl/start (socket-repl/new))
         repl-log (repl-log/start (repl-log/new socket-repl))
-        plugin (plugin/start (plugin/new debug nvim repl-log socket-repl))]
+        plugin (plugin/start (plugin/new nvim repl-log socket-repl))]
     {:nvim nvim
      :repl-log repl-log
      :socket-repl socket-repl
      :plugin plugin}))
+
+(defn new-system
+  ([]
+   (log/info "starting plugin using STDIO")
+   (new-system* (nvim/new)))
+  ([uds-filepath]
+   (log/info "starting plugin using UDS" uds-filepath)
+   (new-system* (nvim/new uds-filepath)))
+  ([host port]
+   (log/info (format "starting plugin using TCP socket %s:%s" host port))
+   (new-system* (nvim/new host port))))
 
 (defn stop
   [{:keys [nvim plugin repl-log socket-repl] :as system}]
@@ -31,4 +39,6 @@
 
 (defn -main
   [& args]
-  (new-system false))
+  (if (= 1 (count args))
+    (new-system (first args))
+    (new-system)))

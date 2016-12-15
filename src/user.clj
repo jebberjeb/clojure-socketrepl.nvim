@@ -15,7 +15,7 @@
 (defn go
   "Start the plugin."
   []
-  (reset! system-atom (system/new-system true)))
+  (reset! system-atom (system/new-system "localhost" 7777)))
 
 (defn stop
   []
