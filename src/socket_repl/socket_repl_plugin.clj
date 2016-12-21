@@ -8,6 +8,7 @@
     [clojure.tools.logging :as log]
     [neovim-client.message :as message]
     [neovim-client.nvim :as nvim]
+    [socket-repl.nrepl :as nrepl]
     [socket-repl.repl-log :as repl-log]
     [socket-repl.socket-repl :as socket-repl]
     [socket-repl.util :refer [log-start log-stop]]))
@@ -43,9 +44,10 @@
                   \n"######################\n")))
 
 (defn run-command
-  [{:keys [nvim socket-repl]} f]
+  [{:keys [nvim nrepl socket-repl]} f]
   (fn [msg]
-    (if-not (socket-repl/connected? socket-repl)
+    (if-not (or (socket-repl/connected? socket-repl)
+                (nrepl/connected? nrepl))
       (async/thread
         (nvim/vim-command
           nvim ":echo 'Use :Connect host:port to connect to a socket repl'"))
@@ -77,14 +79,15 @@
   (:code-channel plugin))
 
 (defn start
-  [{:keys [nvim repl-log socket-repl code-channel] :as plugin}]
+  [{:keys [nvim nrepl repl-log socket-repl code-channel] :as plugin}]
 
   ;; Wire sub-component io.
   (log-start
     "plugin"
     (let [mult (async/mult code-channel)]
       (async/tap mult (socket-repl/input-channel socket-repl))
-      (async/tap mult (repl-log/input-channel repl-log)))
+      (async/tap mult (repl-log/input-channel repl-log))
+      (async/tap mult (nrepl/input-channel nrepl)))
 
     ;; Setup plugin functions.
     (nvim/register-method!
@@ -102,6 +105,24 @@
               (async/thread (nvim/vim-command
                               nvim
                               ":echo 'Unable to connect to socket repl.'"))))
+          :done)))
+
+    (nvim/register-method!
+      nvim
+      "connect-nrepl"
+      (fn [msg]
+        ;; TODO - reuse this
+        (let [[host port] (-> msg
+                              message/params
+                              first
+                              (string/split #":"))]
+          (try
+            (nrepl/connect nrepl host port)
+            (catch Throwable t
+              (log/error t "Error connecting to nrepl")
+              (async/thread (nvim/vim-command
+                              nvim
+                              ":echo 'Unable to connect to nrepl.'"))))
           :done)))
 
     (nvim/register-method!
@@ -196,8 +217,9 @@
     plugin))
 
 (defn new
-  [nvim repl-log socket-repl]
+  [nvim nrepl repl-log socket-repl]
   {:nvim nvim
+   :nrepl nrepl
    :repl-log repl-log
    :socket-repl socket-repl
    :code-channel (async/chan 1024)})

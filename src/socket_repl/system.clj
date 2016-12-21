@@ -6,17 +6,20 @@
     [neovim-client.nvim :as nvim]
     [socket-repl.socket-repl-plugin :as plugin]
     [socket-repl.repl-log :as repl-log]
-    [socket-repl.socket-repl :as socket-repl])
+    [socket-repl.socket-repl :as socket-repl]
+    [socket-repl.nrepl :as nrepl])
   (:gen-class))
 
 (defn new-system*
   [nvim]
   (let [socket-repl (socket-repl/start (socket-repl/new))
-        repl-log (repl-log/start (repl-log/new socket-repl))
-        plugin (plugin/start (plugin/new nvim repl-log socket-repl))]
+        nrepl (nrepl/start (nrepl/new))
+        repl-log (repl-log/start (repl-log/new socket-repl nrepl))
+        plugin (plugin/start (plugin/new nvim nrepl repl-log socket-repl))]
     {:nvim nvim
      :repl-log repl-log
      :socket-repl socket-repl
+     :nrepl nrepl
      :plugin plugin}))
 
 (defn new-system

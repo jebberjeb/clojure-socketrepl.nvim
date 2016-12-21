@@ -2,6 +2,7 @@
   "Writes (presumably socket output) to the repl log."
   (:require
     [clojure.core.async :as async]
+    [socket-repl.nrepl :as nrepl]
     [socket-repl.socket-repl :as socket-repl]
     [socket-repl.util :refer [log-start log-stop]])
   (:import
@@ -18,12 +19,15 @@
   (:input-channel repl-log))
 
 (defn start
-  [{:keys [file input-channel socket-repl] :as repl-log}]
+  [{:keys [file input-channel socket-repl nrepl] :as repl-log}]
 
   (log-start
     "repl-log"
     ;; Subscribe to socket-repl output.
     (socket-repl/subscribe-output socket-repl input-channel)
+
+    ;; Subscribe to nrepl output.
+    (nrepl/subscribe-output nrepl input-channel)
 
     ;; Write input to file.
     (let [print-stream (PrintStream. file)]
@@ -44,8 +48,9 @@
     (dissoc repl-log :print-stream :input-channel)))
 
 (defn new
-  [socket-repl]
+  [socket-repl nrepl]
   {:socket-repl socket-repl
+   :nrepl nrepl
    :file (File/createTempFile "socket-repl" ".txt")
    :print-stream nil
    :input-channel (async/chan 1024)})

@@ -15,24 +15,25 @@ function! StartIfNotRunning()
 endfunction
 command! Start call StartIfNotRunning()
 
-function! Connect(host_colon_port)
+function! Connect(host_colon_port, op_code)
     if a:host_colon_port == ""
         let conn = "localhost:5555"
     else
         let conn = a:host_colon_port
     endif
-    let res = rpcnotify(g:nvim_tcp_plugin_channel, 'connect', conn)
+    let res = rpcnotify(g:nvim_tcp_plugin_channel, a:op_code, conn)
     return res
 endfunction
 
-function! ReadyConnect(host_colon_port)
+function! ReadyConnect(host_colon_port, op_code)
     if g:socket_repl_plugin_ready == 1
-        call Connect(a:host_colon_port)
+        call Connect(a:host_colon_port, a:op_code)
     else
         echo s:not_ready
     endif
 endfunction
-command! -nargs=? Connect call ReadyConnect("<args>")
+command! -nargs=? Connect call ReadyConnect("<args>", "connect")
+command! -nargs=? NConnect call ReadyConnect("<args>", "connect-nrepl")
 
 function! EvalBuffer()
     ReplLog

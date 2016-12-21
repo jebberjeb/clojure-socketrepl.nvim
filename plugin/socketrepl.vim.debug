@@ -1,15 +1,17 @@
 let g:nvim_tcp_plugin_channel = 0
+let g:manually_start_socket_repl_plugin = 1
 
-function! Connect(host_colon_port)
+function! Connect(host_colon_port, op_code)
     if a:host_colon_port == ""
         let conn = "localhost:5555"
     else
         let conn = a:host_colon_port
     endif
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'connect', conn)
+    let res = rpcrequest(g:nvim_tcp_plugin_channel, a:op_code, conn)
     return res
 endfunction
-command! -nargs=? Connect call Connect("<args>")
+command! -nargs=? Connect call Connect("<args>", "connect")
+command! -nargs=? NConnect call Connect("<args>", "connect-nrepl")
 
 function! EvalBuffer()
     ReplLog
