@@ -117,5 +117,7 @@ if !exists('g:disable_socket_repl_mappings')
 endif
 
 if !exists('g:manually_start_socket_repl_plugin')
-    call StartIfNotRunning()
+    if has("nvim")
+        call StartIfNotRunning()
+    endif
 endif
