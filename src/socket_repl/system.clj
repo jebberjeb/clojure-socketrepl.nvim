@@ -25,13 +25,13 @@
 (defn new-system
   ([]
    (log/info "starting plugin using STDIO")
-   (new-system* (nvim/new)))
+   (new-system* (nvim/new 1)))
   ([uds-filepath]
    (log/info "starting plugin using UDS" uds-filepath)
-   (new-system* (nvim/new uds-filepath)))
+   (new-system* (nvim/new 1 uds-filepath)))
   ([host port]
    (log/info (format "starting plugin using TCP socket %s:%s" host port))
-   (new-system* (nvim/new host port))))
+   (new-system* (nvim/new 1 host port))))
 
 (defn stop
   [{:keys [nvim plugin repl-log socket-repl] :as system}]

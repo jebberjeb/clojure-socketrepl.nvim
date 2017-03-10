@@ -6,6 +6,10 @@
     [clojure.java.io :as io]
     [clojure.string :as string]
     [clojure.tools.logging :as log]
+    [neovim-client.1.api :as api]
+    [neovim-client.1.api.buffer :as api.buffer]
+    [neovim-client.1.api.buffer-ext :as api.buffer-ext]
+    [neovim-client.1.api-ext :as api-ext]
     [neovim-client.message :as message]
     [neovim-client.nvim :as nvim]
     [socket-repl.nrepl :as nrepl]
@@ -49,7 +53,7 @@
     (if-not (or (socket-repl/connected? socket-repl)
                 (nrepl/connected? nrepl))
       (async/thread
-        (nvim/vim-command
+        (api/command
           nvim ":echo 'Use :Connect host:port to connect to a socket repl'"))
       (async/thread (f msg)))
     ;; Don't return an async channel, return something msg-pack can serialize.
@@ -58,21 +62,21 @@
 (defn get-rlog-buffer
   "Returns the buffer w/ b:rlog set, if one exists."
   [nvim]
-  (some->> (nvim/vim-get-buffers nvim)
-           (filter #(nvim/buffer-get-var nvim % "rlog"))
+  (some->> (api/list-bufs nvim)
+           (filter #(api.buffer/get-var nvim % "rlog"))
            first))
 
 (defn get-rlog-buffer-name
   "Returns the name of the buffer w/ b:rlog set, if one exists."
   [nvim]
   (let [buffer (get-rlog-buffer nvim)]
-    (when buffer (nvim/buffer-get-name nvim buffer))))
+    (when buffer (api.buffer/get-name nvim buffer))))
 
 (defn get-rlog-buffer-number
   "Returns the number of the buffer w/ b:rlog set, if one exists."
   [nvim]
   (let [buffer (get-rlog-buffer nvim)]
-    (when buffer (nvim/buffer-get-number nvim buffer))))
+    (when buffer (api.buffer/get-number nvim buffer))))
 
 (defn code-channel
   [plugin]
@@ -102,7 +106,7 @@
             (socket-repl/connect socket-repl host port)
             (catch Throwable t
               (log/error t "Error connecting to socket repl")
-              (async/thread (nvim/vim-command
+              (async/thread (api/command
                               nvim
                               ":echo 'Unable to connect to socket repl.'"))))
           :done)))
@@ -120,7 +124,7 @@
             (nrepl/connect nrepl host port)
             (catch Throwable t
               (log/error t "Error connecting to nrepl")
-              (async/thread (nvim/vim-command
+              (async/thread (api/command
                               nvim
                               ":echo 'Unable to connect to nrepl.'"))))
           :done)))
@@ -131,8 +135,8 @@
       (run-command
         plugin
         (fn [msg]
-          (let [coords (nvim/get-cursor-location nvim)
-                buffer-text (nvim/get-current-buffer-text nvim)]
+          (let [coords (api-ext/get-cursor-location nvim)
+                buffer-text (api-ext/get-current-buffer-text nvim)]
             (try
               (async/>!! code-channel (get-form-at buffer-text coords))
               (catch Throwable t
@@ -145,15 +149,15 @@
       (run-command
         plugin
         (fn [msg]
-          (let [buffer (nvim/vim-get-current-buffer nvim)
-                filename (nvim/buffer-get-name nvim buffer)]
+          (let [buffer (api/get-current-buf nvim)
+                filename (api.buffer/get-name nvim buffer)]
             (if (.exists (io/as-file filename))
               (do
                 ;; Not sure if saving the file is really always what we want,
                 ;; but if we don't, stale data will be loaded.
-                (nvim/vim-command nvim ":w")
+                (api/command nvim ":w")
                 (async/>!! code-channel (format "(load-file \"%s\")" filename)))
-              (let [code (string/join "\n" (nvim/buffer-get-line-slice
+              (let [code (string/join "\n" (api.buffer-ext/get-lines
                                              nvim buffer 0 -1))]
                 (async/>!! code-channel (format "(eval '(do %s))" code))))))))
 
@@ -163,7 +167,7 @@
       (run-command
         plugin
         (fn [msg]
-          (nvim/get-current-word-async
+          (api-ext/get-current-word-async
             nvim
             (fn [word]
               (let [code (format "(clojure.repl/doc  %s)" word)]
@@ -176,18 +180,19 @@
         plugin
         (fn [msg]
           (let [file (-> repl-log repl-log/file .getAbsolutePath)]
-            (let [original-window (nvim/vim-get-current-window nvim)
+            (let [original-window (api/get-current-win nvim)
                   buffer-cmd (first (message/params msg))
                   rlog-buffer (get-rlog-buffer-name nvim)
                   rlog-buffer-visible? (when rlog-buffer
-                                         (async/<!! (nvim/buffer-visible?-async
-                                                      nvim rlog-buffer)))]
+                                         (async/<!!
+                                           (api-ext/buffer-visible?-async
+                                             nvim rlog-buffer)))]
               (when-not rlog-buffer-visible?
-                (nvim/vim-command
+                (api/command
                   nvim
                   (format "%s | nnoremap <buffer> q :q<cr> | :let b:rlog=1 | :call termopen('tail -f %s') | :set ft=clojurerepl"
                           buffer-cmd file))
-                (nvim/vim-set-current-window nvim original-window)))))))
+                (api/set-current-win nvim original-window)))))))
 
     (nvim/register-method!
       nvim
@@ -195,12 +200,12 @@
       (run-command
         plugin
         (fn [msg]
-          (nvim/vim-command
+          (api/command
             nvim (format "bd! %s" (get-rlog-buffer-number nvim))))))
 
     (async/thread
-      (nvim/vim-command nvim "let g:socket_repl_plugin_ready = 1")
-      (nvim/vim-command nvim "echo 'SocketREPL plugin ready'"))
+      (api/command nvim "let g:socket_repl_plugin_ready = 1")
+      (api/command nvim "echo 'SocketREPL plugin ready'"))
 
     plugin))
 
@@ -210,7 +215,7 @@
     "plugin"
 
     ;; Close the repl log buffer
-    (nvim/vim-command
+    (api/command
       nvim (format "bd! %s" (get-rlog-buffer-number nvim)))
 
     (async/close! (:code-channel plugin))
