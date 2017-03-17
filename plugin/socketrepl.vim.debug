@@ -7,42 +7,36 @@ function! Connect(host_colon_port, op_code)
     else
         let conn = a:host_colon_port
     endif
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, a:op_code, conn)
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, a:op_code, conn)
 endfunction
 command! -nargs=? Connect call Connect("<args>", "connect")
 command! -nargs=? NConnect call Connect("<args>", "connect-nrepl")
 
 function! EvalBuffer()
     ReplLog
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'eval-buffer', [])
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, 'eval-buffer', [])
 endfunction
 command! EvalBuffer call EvalBuffer()
 
 function! EvalCode()
     ReplLog
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'eval-code', [])
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, 'eval-code', [])
 endfunction
 command! EvalCode call EvalCode()
 
 function! ReplLog(buffer_cmd)
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'show-log', a:buffer_cmd)
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, 'show-log', a:buffer_cmd)
 endfunction
 command! ReplLog call ReplLog(':botright new')
 
 function! DismissReplLog()
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'dismiss-log', [])
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, 'dismiss-log', [])
 endfunction
 command! DismissReplLog call DismissReplLog()
 
 function! Doc()
     ReplLog
-    let res = rpcrequest(g:nvim_tcp_plugin_channel, 'doc', [])
-    return res
+    call rpcnotify(g:nvim_tcp_plugin_channel, 'doc', [])
 endfunction
 command! Doc call Doc()
 
