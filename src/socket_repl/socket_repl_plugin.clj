@@ -13,30 +13,10 @@
     [neovim-client.message :as message]
     [neovim-client.nvim :as nvim]
     [socket-repl.nrepl :as nrepl]
+    [socket-repl.parser :as parser]
     [socket-repl.repl-log :as repl-log]
     [socket-repl.socket-repl :as socket-repl]
     [socket-repl.util :refer [log-start log-stop]]))
-
-(defn position
-  "Find the position in a code string given line and column."
-  [code-str [y x]]
-  (->> code-str
-       string/split-lines
-       (take (dec y))
-       (string/join "\n")
-       count
-       (+ (inc x))))
-
-(defn get-form-at
-  "Returns the enclosing form from a string a code using [row col]
-  coordinates."
-  [code-str coords]
-  (let [pos (position code-str coords)]
-    (read-string
-      ;; Start at the last index of paren on or before `pos`, read a form.
-      (subs code-str (if (= \( (.charAt code-str pos))
-                       pos
-                       (.lastIndexOf (subs code-str 0 pos) "("))))))
 
 (defn write-error
   "Write a throwable's stack trace to the repl log."
@@ -135,10 +115,10 @@
       (run-command
         plugin
         (fn [msg]
-          (let [coords (api-ext/get-cursor-location nvim)
+          (let [[row col] (api-ext/get-cursor-location nvim)
                 buffer-text (api-ext/get-current-buffer-text nvim)]
             (try
-              (async/>!! code-channel (get-form-at buffer-text coords))
+              (async/>!! code-channel (parser/read-next buffer-text row (inc col)))
               (catch Throwable t
                 (log/error t "Error evaluating a form")
                 (write-error repl-log t)))))))

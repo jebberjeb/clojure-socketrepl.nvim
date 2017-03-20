@@ -1,4 +1,4 @@
-(defproject socket-repl-plugin "0.1.0-SNAPSHOT"
+(defproject socket-repl-plugin "0.1.0"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -7,6 +7,7 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [org.clojure/tools.namespace "0.2.11"]
                  [org.clojure/tools.nrepl "0.2.12"]
+                 [org.clojure/tools.reader "1.0.0-beta4"]
                  [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
                                                     javax.jms/jms
                                                     com.sun.jmdk/jmxtools

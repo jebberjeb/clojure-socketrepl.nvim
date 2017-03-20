@@ -18,6 +18,10 @@
   [repl-log]
   (:input-channel repl-log))
 
+(defn format-input
+  [s]
+  s)
+
 (defn start
   [{:keys [file input-channel socket-repl nrepl] :as repl-log}]
 
@@ -34,7 +38,7 @@
       (async/thread
         (loop []
           (when-let [input (async/<!! input-channel)]
-            (.println print-stream input)
+            (.println print-stream (#'format-input input))
             (.flush print-stream)
             (recur))))
       (assoc repl-log :print-stream print-stream))))

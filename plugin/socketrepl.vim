@@ -8,7 +8,7 @@ let s:not_ready = "SocketREPL plugin not ready (starting)"
 function! StartIfNotRunning()
     if g:is_running == 0
         echo 'Starting SocketREPL plugin...'
-        let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-SNAPSHOT-standalone.jar'
+        let jar_file_path = s:p_dir . '/../' . 'socket-repl-plugin-0.1.0-standalone.jar'
         call jobstart(['java', '-jar', jar_file_path], {'rpc': v:true})
         let g:is_running = 1
     endif
