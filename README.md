@@ -119,3 +119,11 @@ neovim-client functions when you want (the plugin) to make a request
 of neovim. This is because the Neovim function `rpcrequest` blocks until
 it has received a response (from your plugin). Using async on the plugin
 side is the easiest way to avoid deadlock.
+
+## Changes
+
+### 0.1.0
+
+* Use `tools.reader` for parsing source to eval
+* Fix bug namespaced keys using `::kw` form were expanded using the wrong
+namespace when read by the plugin's reader
